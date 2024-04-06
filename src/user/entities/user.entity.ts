@@ -5,13 +5,16 @@ export class User {
     @PrimaryGeneratedColumn({ type: "int", name: "id" })
     id: number;
 
+    @Column("varchar", { name: "openid", unique: true, length: 45 })
+    openid: string;
+
     @Column("varchar", { name: "nickName", length: 45 })
     nickName: string;
 
-    @Column("varchar", { name: "groupId", length: 45 })
+    @Column("varchar", { name: "groupId", nullable: true, length: 45 })
     groupId: string;
 
-    @Column("varchar", { name: "identityID", unique: true, length: 45 })
+    @Column("varchar", { name: "identityID", nullable: true, unique: true, length: 45 })
     identityID: string;
 
     @Column("text", { name: "avatarUrl", nullable: true })
