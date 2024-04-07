@@ -16,3 +16,20 @@ export function IsNumberArray() {
       });
   };
 }
+
+export function IsStringArray() {
+  return function (object: Object, propertyName: string) {
+      registerDecorator({
+          name: 'IsStringArray',
+          target: object.constructor,
+          propertyName: propertyName,
+          constraints: [],
+          options: { message: "类型为stringArray" },
+          validator: {
+              validate(value: any) {
+                  return Array.isArray(value) && value.every(item => typeof item === 'string');
+              },
+          },
+      });
+  };
+}
