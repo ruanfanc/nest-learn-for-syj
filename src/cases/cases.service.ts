@@ -1,16 +1,40 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateCaseDto } from './dto/create-case.dto';
+import { SubmitCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
 import { Case } from './entities/case.entity';
 
 @Injectable()
 export class CasesService {
-  @InjectRepository(Case) private userRepository: Repository<Case>
+  @InjectRepository(Case) private caseRepository: Repository<Case>
 
-  create(createCaseDto: CreateCaseDto) {
-    return 'This action adds a new case';
+  async submit(submitCaseDto: SubmitCaseDto) {
+    if(submitCaseDto.id) {
+      const caseFinded = await this.caseRepository.find({ where: { id: submitCaseDto.id } })
+
+      if (caseFinded) {
+        await this.caseRepository
+        .createQueryBuilder()
+        .update(Case).set(submitCaseDto).where('id=:id', { id: submitCaseDto.id }).execute()
+
+        return {
+          success: 200
+        }
+      }
+
+      throw new HttpException({
+        errorno: 2,
+        errormsg: `未找到id为${submitCaseDto.id}的帖子、案件`,
+      }, HttpStatus.BAD_REQUEST);
+    }
+
+    if(submitCaseDto.isSubmit) {
+      await this.caseRepository.save({ 
+        ...submitCaseDto,
+        
+      })
+    }
   }
 
   findAll() {

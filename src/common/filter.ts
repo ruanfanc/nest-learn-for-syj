@@ -14,11 +14,13 @@ export class Filter implements ExceptionFilter {
 
         const status = exception.getStatus()
 
+        const exceptionRes = exception.getResponse() as any;
+
         response.status(status).json({
             time: new Date(),
-            data: exception.getResponse(),
-            errormsg: exception.message,
-            errorno: 1,
+            data: exceptionRes,
+            errormsg: exceptionRes.errormsg,
+            errorno: exceptionRes.errorno,
             path: request.url
         })
     }
