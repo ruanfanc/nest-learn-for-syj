@@ -1,9 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
+import { Case } from './entities/case.entity';
 
 @Injectable()
 export class CasesService {
+  @InjectRepository(Case) private userRepository: Repository<Case>
+
   create(createCaseDto: CreateCaseDto) {
     return 'This action adds a new case';
   }
