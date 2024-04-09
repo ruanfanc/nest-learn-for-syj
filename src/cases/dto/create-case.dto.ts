@@ -8,7 +8,7 @@ export class SubmitCaseDto {
   isSubmit: boolean;
   @IsOptional()
   @IsString()
-  id: string;
+  id: number;
   @IsNotEmpty()
   @IsString()
   title: string;

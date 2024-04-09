@@ -5,13 +5,15 @@ import { Repository } from 'typeorm';
 import { SubmitCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
 import { Case } from './entities/case.entity';
+import { CASE_STATUS } from './types';
 
 @Injectable()
 export class CasesService {
   @InjectRepository(Case) private caseRepository: Repository<Case>
   private readonly userService: UserService // inject user service
 
-  async submit(submitCaseDto: SubmitCaseDto) {
+  async submit(submitCaseDto: SubmitCaseDto, session) {
+    // ========================= edit ==========================
     if(submitCaseDto.id) {
       const caseFinded = await this.caseRepository.find({ where: { id: submitCaseDto.id } })
 
@@ -21,7 +23,7 @@ export class CasesService {
         .update(Case).set(submitCaseDto).where('id=:id', { id: submitCaseDto.id }).execute()
 
         return {
-          success: 200
+          success: true
         }
       }
 
@@ -31,10 +33,37 @@ export class CasesService {
       }, HttpStatus.BAD_REQUEST);
     }
 
+    
+    const [userInfo] = await this.userService.getUserInfo(session.openid)
+
+    if (!userInfo) {
+      throw new HttpException({
+        errorno: 3,
+        errormsg: `未找到openid为${session.openid}的用户`,
+      }, HttpStatus.BAD_REQUEST);
+    }
+
+    // =========================== create ====================
     if(submitCaseDto.isSubmit) {
       await this.caseRepository.save({ 
         ...submitCaseDto,
-        
+        avatarUrl: userInfo.avatarUrl,
+        username: userInfo.nickName,
+        userdesc: userInfo.groupId || '',
+        status: CASE_STATUS.WAIT_FOR_AUDIT,
+      })
+
+      return {
+        success: true
+      }
+    } else {
+      // =========================== draft ========================
+      await this.caseRepository.save({ 
+        ...submitCaseDto,
+        avatarUrl: userInfo.avatarUrl,
+        username: userInfo.nickName,
+        userdesc: userInfo.groupId || '',
+        status: CASE_STATUS.DRAFT,
       })
     }
   }

@@ -4,7 +4,7 @@ import { CASES_BUTTONS_MAP_Value, CASE_STATUS, CASE_TYPE_MAP_VALUE } from "../ty
 @Entity("user", { schema: "younglaw" })
 export class Case {
   @PrimaryGeneratedColumn({ type: "int", name: "id" })
-  id: string
+  id: number
 
   @Column("varchar", { name: "nickName", length: 45 })
   title: string
@@ -30,9 +30,6 @@ export class Case {
   @Column("varchar", { name: "nickName", length: 45 })
   userdesc: string
 
-  @Column("json", { name: "status", nullable: true })
-  status: CASE_STATUS[]
-
-  @Column("json", { name: "status", nullable: true })
-  buttons: CASES_BUTTONS_MAP_Value
+  @Column("int", { name: "status", nullable: true })
+  status: CASE_STATUS
 }

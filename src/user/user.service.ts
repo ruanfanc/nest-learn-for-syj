@@ -42,4 +42,9 @@ export class UserService {
     }
   }
 
+  /** this api is only for internal module */
+  async getUserInfo(openid: string) {
+    const user = await this.userRepository.find({ where: { openid: openid } })
+    return user
+  }
 }
