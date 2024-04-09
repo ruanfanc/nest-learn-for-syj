@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { SubmitCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
@@ -8,6 +9,7 @@ import { Case } from './entities/case.entity';
 @Injectable()
 export class CasesService {
   @InjectRepository(Case) private caseRepository: Repository<Case>
+  private readonly userService: UserService // inject user service
 
   async submit(submitCaseDto: SubmitCaseDto) {
     if(submitCaseDto.id) {
