@@ -13,7 +13,7 @@ import { CasesModule } from './cases/cases.module';
       host: 'localhost',
       port: 3306,
       username: 'root',
-      password: '',
+      password: '9156younglaw8270.',
       database: 'younglaw',
       entities: [],
       synchronize: true,
