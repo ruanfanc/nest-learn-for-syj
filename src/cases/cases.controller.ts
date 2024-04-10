@@ -1,15 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Session } from '@nestjs/common';
 import { CasesService } from './cases.service';
-import { CreateCaseDto } from './dto/create-case.dto';
+import { SubmitCaseDto } from './dto/create-case.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
 
 @Controller('cases')
 export class CasesController {
   constructor(private readonly casesService: CasesService) {}
 
-  @Post()
-  create(@Body() createCaseDto: CreateCaseDto) {
-    return this.casesService.create(createCaseDto);
+  @Post('/submit')
+  submit(@Body() createCaseDto: SubmitCaseDto, @Session() session) {
+    return this.casesService.submit(createCaseDto, session);
   }
 
   @Get()

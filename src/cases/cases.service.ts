@@ -45,7 +45,7 @@ export class CasesService {
 
     // =========================== create ====================
     if(submitCaseDto.isSubmit) {
-      await this.caseRepository.save({ 
+      const caseInfo = await this.caseRepository.save({ 
         ...submitCaseDto,
         avatarUrl: userInfo.avatarUrl,
         username: userInfo.nickName,
@@ -54,17 +54,23 @@ export class CasesService {
       })
 
       return {
+        id: caseInfo.id,
         success: true
       }
     } else {
       // =========================== draft ========================
-      await this.caseRepository.save({ 
+      const caseInfo = await this.caseRepository.save({ 
         ...submitCaseDto,
         avatarUrl: userInfo.avatarUrl,
         username: userInfo.nickName,
         userdesc: userInfo.groupId || '',
         status: CASE_STATUS.DRAFT,
       })
+
+      return {
+        id: caseInfo.id,
+        success: true
+      }
     }
   }
 
