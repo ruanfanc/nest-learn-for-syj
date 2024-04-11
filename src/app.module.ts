@@ -10,7 +10,7 @@ import { CasesModule } from './cases/cases.module';
     UserModule,
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: 'localhost',
+      host: '159.75.130.129',
       port: 3306,
       username: 'root',
       password: '9156younglaw8270.',
