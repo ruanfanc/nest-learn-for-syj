@@ -74,6 +74,19 @@ export class CasesService {
     }
   }
 
+  async detail(id: string, session) {
+    const caseFinded = await this.caseRepository.find({ where: { id: Number(id), } })
+
+    if (caseFinded) {
+      return caseFinded[0]
+    }
+
+    throw new HttpException({
+      errorno: 4,
+      errormsg: `未找到id为${id}的帖子、案件`,
+    }, HttpStatus.BAD_REQUEST);
+  }
+
   findAll() {
     return `This action returns all cases`;
   }
