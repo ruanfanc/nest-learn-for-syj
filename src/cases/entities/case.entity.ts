@@ -15,6 +15,9 @@ export class Case {
   @Column("json", { name: "identity", nullable: true })
   caseType: CASE_TYPE_MAP_VALUE
 
+  @Column("text", { name: "auditComment", nullable: false })
+  auditComment: string
+  
   @Column("json", { name: "imgSrcs", nullable: true })
   imgSrcs: string[]
 

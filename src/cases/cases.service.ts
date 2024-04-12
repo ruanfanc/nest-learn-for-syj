@@ -87,8 +87,25 @@ export class CasesService {
     }, HttpStatus.BAD_REQUEST);
   }
 
-  findAll() {
-    return `This action returns all cases`;
+  async audit({ id, auditComment, isPass } : {
+    id: string
+    isPass: boolean
+    auditComment: string
+  }, session) {
+    const caseFinded = await this.caseRepository
+    .createQueryBuilder()
+    .update(Case).set({ auditComment, status: isPass ? CASE_STATUS.WAITTING : CASE_STATUS.WAIT_FOR_AUDIT  }).where('id=:id', { id }).execute()
+    
+    if (caseFinded) {
+      return {
+        success: true
+      }
+    }
+
+    throw new HttpException({
+      errorno: 5,
+      errormsg: `审核失败，可能未找到该案件`,
+    }, HttpStatus.BAD_REQUEST);
   }
 
   findOne(id: number) {
