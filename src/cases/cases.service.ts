@@ -108,15 +108,16 @@ export class CasesService {
     }, HttpStatus.BAD_REQUEST);
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} case`;
-  }
+  async findAll(pageNo: number = 1, pageSize: number = 10) {
+    const skip = (pageNo - 1) * pageSize;
+    const [data, total] = await this.caseRepository.findAndCount({
+      take: pageSize,
+      skip: skip,
+    });
 
-  update(id: number, updateCaseDto: UpdateCaseDto) {
-    return `This action updates a #${id} case`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} case`;
+    return {
+      cases: data,
+      total,
+    }
   }
 }
