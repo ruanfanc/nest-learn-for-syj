@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Session } from '@nestjs/common';
 import { CasesService } from './cases.service';
 import { SubmitCaseDto } from './dto/create-case.dto';
-import { UpdateCaseDto } from './dto/update-case.dto';
+import { AuditCaseDto, CaseListDto, UpdateCaseDto } from './dto/update-case.dto';
 
 @Controller('cases')
 export class CasesController {
@@ -12,23 +12,18 @@ export class CasesController {
     return this.casesService.submit(createCaseDto, session);
   }
 
-  @Get()
-  findAll() {
-    return this.casesService.findAll();
+  @Get('/detail:id')
+  detail(@Param('id') id: string) {
+    return this.casesService.detail(id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.casesService.findOne(+id);
+  @Post('/audit')
+  audit(@Body() auditBody: AuditCaseDto) {
+    return this.casesService.audit(auditBody);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCaseDto: UpdateCaseDto) {
-    return this.casesService.update(+id, updateCaseDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.casesService.remove(+id);
+  @Post('list')
+  list(listBody: CaseListDto) {
+    return this.casesService.findAll(listBody);
   }
 }

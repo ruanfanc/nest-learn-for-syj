@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
 import { SubmitCaseDto } from './dto/create-case.dto';
-import { UpdateCaseDto } from './dto/update-case.dto';
+import { AuditCaseDto, CaseListDto, UpdateCaseDto } from './dto/update-case.dto';
 import { Case } from './entities/case.entity';
 import { CASE_STATUS } from './types';
 
@@ -74,7 +74,7 @@ export class CasesService {
     }
   }
 
-  async detail(id: string, session) {
+  async detail(id: string) {
     const caseFinded = await this.caseRepository.find({ where: { id: Number(id), } })
 
     if (caseFinded) {
@@ -87,11 +87,7 @@ export class CasesService {
     }, HttpStatus.BAD_REQUEST);
   }
 
-  async audit({ id, auditComment, isPass } : {
-    id: string
-    isPass: boolean
-    auditComment: string
-  }, session) {
+  async audit({ id, auditComment, isPass } : AuditCaseDto) {
     const caseFinded = await this.caseRepository
     .createQueryBuilder()
     .update(Case).set({ auditComment, status: isPass ? CASE_STATUS.WAITTING : CASE_STATUS.WAIT_FOR_AUDIT  }).where('id=:id', { id }).execute()
@@ -108,7 +104,7 @@ export class CasesService {
     }, HttpStatus.BAD_REQUEST);
   }
 
-  async findAll(pageNo: number = 1, pageSize: number = 10) {
+  async findAll({ pageNo, pageSize } : CaseListDto) {
     const skip = (pageNo - 1) * pageSize;
     const [data, total] = await this.caseRepository.findAndCount({
       take: pageSize,
