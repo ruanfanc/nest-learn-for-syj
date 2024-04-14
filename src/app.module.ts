@@ -12,7 +12,7 @@ import { CasesModule } from './cases/cases.module';
       type: 'mysql',
       host: '159.75.130.129',
       port: 3306,
-      username: 'root',
+      username: 'younglaw',
       password: '9156younglaw8270.',
       database: 'younglaw',
       entities: [],
