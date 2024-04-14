@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm"
 import { CASES_BUTTONS_MAP_Value, CASE_STATUS, CASE_TYPE_MAP_VALUE } from "../types"
 
-@Entity("user", { schema: "younglaw" })
+@Entity("case", { schema: "younglaw" })
 export class Case {
   @PrimaryGeneratedColumn({ type: "int", name: "id" })
   id: number
@@ -9,7 +9,7 @@ export class Case {
   @Column("varchar", { name: "nickName", length: 45 })
   title: string
 
-  @Column("text", { name: "avatarUrl", nullable: false })
+  @Column("text", { name: "contentText", nullable: false })
   contentText: string
 
   @Column("json", { name: "identity", nullable: true })
@@ -17,20 +17,20 @@ export class Case {
 
   @Column("text", { name: "auditComment", nullable: false })
   auditComment: string
-  
+
   @Column("json", { name: "imgSrcs", nullable: true })
   imgSrcs: string[]
 
   @Column("text", { name: "avatarUrl", nullable: false })
   avatarUrl: string
 
-  @Column("varchar", { name: "nickName", length: 45 })
+  @Column("varchar", { name: "createTime", length: 45 })
   createTime: string
 
-  @Column("varchar", { name: "nickName", length: 45 })
+  @Column("varchar", { name: "username", length: 45 })
   username: string
 
-  @Column("varchar", { name: "nickName", length: 45 })
+  @Column("varchar", { name: "userdesc", length: 45 })
   userdesc: string
 
   @Column("int", { name: "status", nullable: true })
