@@ -1,4 +1,4 @@
-name: deploy pvp-texas-porker-node-serve
+name: deploy youth-law-server
 
 on:
   push:
@@ -47,6 +47,7 @@ jobs:
             ls -a;
             nvm use 16.0.0
             npm ci
+            npm run build
             npm run start:prod
           "
 
