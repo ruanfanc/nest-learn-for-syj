@@ -48,7 +48,7 @@ jobs:
             nvm use 16.0.0
             npm ci
             npm run build
-            npm run start:prod
+            npm run prod
           "
 
       - name: 删除 id_rsa
