@@ -47,6 +47,7 @@ jobs:
             ls -a;
             nvm use 16.0.0
             npm ci
+            npm i cross-env
             npm run build
             npm run prod
           "
