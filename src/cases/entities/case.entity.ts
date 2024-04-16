@@ -6,13 +6,13 @@ export class Case {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id: number;
 
-  @Column('varchar', { name: 'nickName', length: 45 })
+  @Column('text', { name: 'title' })
   title: string;
 
   @Column('text', { name: 'contentText', nullable: false })
   contentText: string;
 
-  @Column('json', { name: 'identity', nullable: true })
+  @Column('number', { name: 'caseType', nullable: true })
   caseType: CASE_TYPE_MAP_VALUE;
 
   @Column('text', { name: 'auditComment', nullable: false })

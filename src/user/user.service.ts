@@ -19,12 +19,15 @@ export class UserService {
 
       session.openid = openid;
       session.authenticated = true;
+      session.nickName = nickName;
+      session.avatarUrl = avatarUrl;
 
       const user = await this.userRepository.find({
         where: { openid: openid },
       });
-      if (user) {
-        return { user };
+      if (user.length) {
+        session.userInfo = user[0];
+        return { ...user[0] };
       }
       await this.userRepository.save({
         openid: openid,

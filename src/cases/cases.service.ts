@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from 'src/user/user.service';
 import { Repository } from 'typeorm';
-import { SubmitCaseDto } from './dto/create-case.dto';
+import { EditCaseDto, SubmitCaseDto } from './dto/create-case.dto';
 import { AuditCaseDto, CaseListDto } from './dto/update-case.dto';
 import { Case } from './entities/case.entity';
 import { CASE_STATUS } from './types';
@@ -11,6 +11,8 @@ import { CASE_STATUS } from './types';
 export class CasesService {
   @InjectRepository(Case) private caseRepository: Repository<Case>;
   private readonly userService: UserService; // inject user service
+
+  async editCase(_editCaseDto: EditCaseDto, session) {}
 
   async submit(submitCaseDto: SubmitCaseDto, session) {
     // ========================= edit ==========================
