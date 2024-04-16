@@ -1,6 +1,5 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { IsNumberArray, IsStringArray } from "src/common";
-import { CASE_TYPE_MAP_VALUE } from "../types";
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { CASE_TYPE_MAP_VALUE } from '../types';
 
 export class SubmitCaseDto {
   @IsNotEmpty()

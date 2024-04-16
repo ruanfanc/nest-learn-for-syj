@@ -17,7 +17,7 @@ import { CasesModule } from './cases/cases.module';
       database: 'younglaw',
       entities: [],
       synchronize: true,
-      autoLoadEntities: true
+      autoLoadEntities: true,
     }),
     CasesModule,
   ],
@@ -29,4 +29,4 @@ import { CasesModule } from './cases/cases.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

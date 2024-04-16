@@ -8,9 +8,9 @@ import { Case } from './entities/case.entity';
 @Module({
   imports: [
     UserModule, // 导入用户模块
-    TypeOrmModule.forFeature([Case])
+    TypeOrmModule.forFeature([Case]),
   ],
   controllers: [CasesController],
-  providers: [CasesService]
+  providers: [CasesService],
 })
 export class CasesModule {}
