@@ -32,7 +32,7 @@ export class User {
   confirmCode: string | null;
 }
 
-enum USER_IDENTITY {
+export enum USER_IDENTITY {
   STUDENT = 1,
   TEACHER = 2,
   /** 公众 */

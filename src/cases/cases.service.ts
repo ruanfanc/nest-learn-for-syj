@@ -6,13 +6,31 @@ import { EditCaseDto, SubmitCaseDto } from './dto/create-case.dto';
 import { AuditCaseDto, CaseListDto } from './dto/update-case.dto';
 import { Case } from './entities/case.entity';
 import { CASE_STATUS } from './types';
+import moment from 'moment';
+import { USER_IDENTITY } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class CasesService {
   @InjectRepository(Case) private caseRepository: Repository<Case>;
   private readonly userService: UserService; // inject user service
+  async editCase(_editCaseDto: EditCaseDto, session) {
+    if (_editCaseDto.id) {
+      // 编辑
+    } else {
+      // 新建
 
-  async editCase(_editCaseDto: EditCaseDto, session) {}
+      const isCase = session.identity.includes(USER_IDENTITY.PUBLIC);
+
+      this.caseRepository.save({
+        ..._editCaseDto,
+        createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+        username: session.user,
+        avatarUrl: session.avatarUrl,
+        status: isCase ? CASE_STATUS.WAIT_FOR_AUDIT : CASE_STATUS.NOCASE,
+        type: isCase ? 1 : 0,
+      });
+    }
+  }
 
   async submit(submitCaseDto: SubmitCaseDto, session) {
     // ========================= edit ==========================

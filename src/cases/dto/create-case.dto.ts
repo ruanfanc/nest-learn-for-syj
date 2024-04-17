@@ -12,8 +12,9 @@ export class EditCaseDto {
   @IsBoolean()
   isSubmit: boolean;
 
-  @IsString()
-  id: string;
+  @IsNumber()
+  @IsOptional()
+  id: number;
 
   @IsString()
   @IsNotEmpty()
@@ -23,8 +24,8 @@ export class EditCaseDto {
   @IsNotEmpty()
   contentText: string;
 
-  @IsNumber()
-  caseType: number;
+  @IsOptional()
+  caseType: CASE_TYPE_MAP_VALUE;
 }
 export class SubmitCaseDto {
   @IsNotEmpty()

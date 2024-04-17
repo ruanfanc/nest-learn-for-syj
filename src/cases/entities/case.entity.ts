@@ -12,7 +12,7 @@ export class Case {
   @Column('text', { name: 'contentText', nullable: false })
   contentText: string;
 
-  @Column('number', { name: 'caseType', nullable: true })
+  @Column('json', { name: 'caseType', nullable: true })
   caseType: CASE_TYPE_MAP_VALUE;
 
   @Column('text', { name: 'auditComment', nullable: false })
@@ -35,4 +35,7 @@ export class Case {
 
   @Column('int', { name: 'status', nullable: true })
   status: CASE_STATUS;
+
+  @Column('int', { name: 'type' })
+  type: 1 | 0;
 }

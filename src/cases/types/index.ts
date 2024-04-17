@@ -14,6 +14,7 @@ export const CASE_TYPE_MAP = {
 export type CASE_TYPE_MAP_VALUE = (keyof typeof CASE_TYPE_MAP)[];
 
 export const enum CASE_STATUS {
+  NOCASE = 0,
   WAITTING = 1,
   PROCESSING = 2,
   COMPELETE = 3,
@@ -22,6 +23,7 @@ export const enum CASE_STATUS {
 }
 
 export const CASE_STATUS_MAP: { [key in CASE_STATUS]: string } = {
+  0: '正常',
   1: '待受理',
   2: '受理中',
   3: '已完成 ',

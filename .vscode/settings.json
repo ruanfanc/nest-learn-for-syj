@@ -15,7 +15,12 @@
     "**/dist": true,
     "common/temp": true
   },
-  "eslint.probe": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "eslint.probe": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",
     "source.fixAll.eslint": "explicit"
@@ -63,5 +68,5 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "search.followSymlinks": false,
-  "cSpell.words": ["imgs", "mlsql"],
+  "cSpell.words": ["imgs", "mlsql"]
 }

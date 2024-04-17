@@ -27,7 +27,7 @@ export class CasesController {
     return this.casesService.audit(auditBody);
   }
 
-  @Post('list')
+  @Post('/list')
   list(listBody: CaseListDto) {
     return this.casesService.findAll(listBody);
   }
