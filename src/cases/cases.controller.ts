@@ -1,11 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Session } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Session } from '@nestjs/common';
 import { CasesService } from './cases.service';
-import { SubmitCaseDto } from './dto/create-case.dto';
-import { AuditCaseDto, CaseListDto, UpdateCaseDto } from './dto/update-case.dto';
+import { EditCaseDto, SubmitCaseDto } from './dto/create-case.dto';
+import { AuditCaseDto, CaseListDto } from './dto/update-case.dto';
 
 @Controller('cases')
 export class CasesController {
   constructor(private readonly casesService: CasesService) {}
+
+  @Post('/edit')
+  editCase(@Body() editCaseDto: EditCaseDto, @Session() session) {
+    return this.casesService.editCase(editCaseDto, session);
+  }
 
   @Post('/submit')
   submit(@Body() createCaseDto: SubmitCaseDto, @Session() session) {
@@ -22,7 +27,7 @@ export class CasesController {
     return this.casesService.audit(auditBody);
   }
 
-  @Post('list')
+  @Post('/list')
   list(listBody: CaseListDto) {
     return this.casesService.findAll(listBody);
   }

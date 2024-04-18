@@ -1,7 +1,32 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { IsNumberArray, IsStringArray } from "src/common";
-import { CASE_TYPE_MAP_VALUE } from "../types";
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { CASE_TYPE_MAP_VALUE } from '../types';
 
+export class EditCaseDto {
+  @IsNotEmpty()
+  @IsBoolean()
+  isSubmit: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  id: number;
+
+  @IsString()
+  @IsNotEmpty()
+  title: string;
+
+  @IsString()
+  @IsNotEmpty()
+  contentText: string;
+
+  @IsOptional()
+  caseType: CASE_TYPE_MAP_VALUE;
+}
 export class SubmitCaseDto {
   @IsNotEmpty()
   @IsBoolean()

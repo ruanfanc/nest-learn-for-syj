@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Session } from '@nestjs/common';
+import { Controller, Post, Body, Session } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, InitUserDto } from './dto/user.dto';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Post('/login')
   register(@Body() createUesrDto: CreateUserDto, @Session() session) {
@@ -14,4 +14,4 @@ export class UserController {
   init(@Body() initUser: InitUserDto, @Session() session) {
     return this.userService.init(initUser, session);
   }
-} 
+}
