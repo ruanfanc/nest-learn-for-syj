@@ -15,13 +15,13 @@ export class Case {
   @Column('json', { name: 'caseType', nullable: true })
   caseType: CASE_TYPE_MAP_VALUE;
 
-  @Column('text', { name: 'auditComment', nullable: false })
+  @Column('text', { name: 'auditComment', nullable: true })
   auditComment: string;
 
   @Column('json', { name: 'imgSrcs', nullable: true })
   imgSrcs: string[];
 
-  @Column('text', { name: 'avatarUrl', nullable: false })
+  @Column('text', { name: 'avatarUrl', nullable: true })
   avatarUrl: string;
 
   @Column('varchar', { name: 'createTime', length: 45 })
@@ -30,8 +30,11 @@ export class Case {
   @Column('varchar', { name: 'username', length: 45 })
   username: string;
 
-  @Column('varchar', { name: 'userdesc', length: 45 })
+  @Column('varchar', { name: 'userdesc', length: 45, nullable: true })
   userdesc: string;
+
+  @Column('boolean', { name: 'isSubmit', nullable: true })
+  isSubmit: boolean;
 
   @Column('int', { name: 'status', nullable: true })
   status: CASE_STATUS;
