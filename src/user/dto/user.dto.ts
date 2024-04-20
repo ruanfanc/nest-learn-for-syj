@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { IsNumberArray } from 'src/common';
 
 export class CreateUserDto {
@@ -25,8 +25,8 @@ export class InitUserDto {
   talent: string;
 
   @IsOptional()
-  @IsString()
-  groupId: string;
+  @IsNumber()
+  groupId: number;
 
   @IsOptional()
   @IsString()

@@ -11,8 +11,8 @@ export class User {
   @Column('varchar', { name: 'nickName', length: 45 })
   nickName: string;
 
-  @Column('varchar', { name: 'groupId', nullable: true, length: 45 })
-  groupId: string;
+  @Column('int', { name: 'groupId', nullable: true })
+  groupId: number;
 
   @Column('varchar', {
     name: 'identityID',

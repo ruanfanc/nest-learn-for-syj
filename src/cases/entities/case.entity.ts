@@ -36,6 +36,9 @@ export class Case {
   @Column('boolean', { name: 'isSubmit', nullable: true })
   isSubmit: boolean;
 
+  @Column('boolean', { name: 'isPass', nullable: true, default: false })
+  isPass: boolean;
+
   @Column('int', { name: 'status', nullable: true })
   status: CASE_STATUS;
 

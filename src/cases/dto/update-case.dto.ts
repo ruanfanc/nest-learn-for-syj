@@ -15,18 +15,18 @@ export class AuditCaseDto {
   @IsBoolean()
   isPass: boolean;
   @IsNotEmpty()
-  @IsString()
-  id: string;
+  @IsNumber()
+  id: number;
   @IsOptional()
   @IsString()
   auditComment: string;
 }
 
 export class CaseListDto {
-  @IsOptional()
+  @IsNotEmpty()
   @IsNumber()
   pageNo: number;
-  @IsOptional()
+  @IsNotEmpty()
   @IsNumber()
   pageSize: number;
 }
