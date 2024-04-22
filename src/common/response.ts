@@ -18,6 +18,8 @@ export class Response<T> implements NestInterceptor {
           data,
           status: 0,
           message: '成功',
+          errorno: 0,
+          errormsg: '',
         };
       }),
     );
