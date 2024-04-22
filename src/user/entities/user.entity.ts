@@ -1,12 +1,9 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('user', { schema: 'younglaw' })
 export class User {
-  @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
-  id: number;
-
-  @Column('varchar', { name: 'openid', unique: true, length: 45 })
-  openid: string;
+  @PrimaryColumn({ type: 'varchar', name: 'id' })
+  id: string;
 
   @Column('varchar', { name: 'nickName', length: 45 })
   nickName: string;

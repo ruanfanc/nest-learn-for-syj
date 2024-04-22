@@ -22,15 +22,15 @@ export class UserService {
       session.nickName = nickName;
       session.avatarUrl = avatarUrl;
 
-      const user = await this.userRepository.find({
-        where: { openid: openid },
+      const user = await this.userRepository.findOne({
+        where: { id: openid },
       });
-      if (user.length) {
-        session.userInfo = user[0];
-        return { ...user[0] };
+      if (user) {
+        session.userInfo = user;
+        return { ...user };
       }
       await this.userRepository.save({
-        openid: openid,
+        id: openid,
         nickName: nickName,
         avatarUrl: avatarUrl,
       });
@@ -48,7 +48,7 @@ export class UserService {
       .createQueryBuilder()
       .update(User)
       .set(InitUse)
-      .where('openid=:openid', { openid: session.openid })
+      .where('id=:id', { id: session.openid })
       .execute();
     return {
       success: 200,
@@ -57,7 +57,7 @@ export class UserService {
 
   /** this api is only for internal module */
   async getUserInfo(openid: string) {
-    const user = await this.userRepository.find({ where: { openid: openid } });
+    const user = await this.userRepository.find({ where: { id: openid } });
     return user;
   }
 }
