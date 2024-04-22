@@ -13,7 +13,7 @@ export class UserService {
     const data = await axios.get(
       `https://api.weixin.qq.com/sns/jscode2session?appid=wx559e4273b8badf2a&secret=7b8954140d68ecf74f21f53b058138e6&grant_type=authorization_code&js_code=${code}`,
     );
-    if (data.data.errcode == 0) {
+    if (!data.data.errcode) {
       // const openid = 'woshishdskashfasjk';
       const { openid } = data.data;
 
