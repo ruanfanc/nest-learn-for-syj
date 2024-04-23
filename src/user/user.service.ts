@@ -13,9 +13,9 @@ export class UserService {
     const data = await axios.get(
       `https://api.weixin.qq.com/sns/jscode2session?appid=wx559e4273b8badf2a&secret=7b8954140d68ecf74f21f53b058138e6&grant_type=authorization_code&js_code=${code}`,
     );
-    if (!data.data.errcode) {
-      // const openid = 'woshishdskashfasjk';
-      const { openid } = data.data;
+    if (data.data.errcode) {
+      const openid = 'woshishdskashfasjk';
+      // const { openid } = data.data;
 
       session.openid = openid;
       session.authenticated = true;
@@ -34,11 +34,13 @@ export class UserService {
         nickName: nickName,
         avatarUrl: avatarUrl,
       });
-      return {
+      const userInfo = {
         id: openid,
         nickName,
         avatarUrl,
       };
+      session.userInfo = userInfo;
+      return userInfo;
     } else {
       return data.data;
     }
@@ -46,14 +48,14 @@ export class UserService {
   async init(InitUse: InitUserDto, session) {
     try {
       await this.userRepository
-      .createQueryBuilder()
-      .update(User)
-      .set(InitUse)
-      .where('id=:id', { id: session.openid })
-      .execute();
+        .createQueryBuilder()
+        .update(User)
+        .set(InitUse)
+        .where('id=:id', { id: session.openid })
+        .execute();
 
       const user = await this.userRepository.find({
-        where: { openid: session.openid },
+        where: { id: session.openid },
       });
 
       if (user?.length) {

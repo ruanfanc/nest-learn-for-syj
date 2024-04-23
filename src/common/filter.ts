@@ -21,8 +21,8 @@ export class Filter implements ExceptionFilter {
 
     response.status(status).json({
       time: new Date(),
-      errormsg: exceptionRes.errormsg,
-      errorno: exceptionRes.errorno,
+      errormsg: exceptionRes.errormsg ?? exceptionRes.message ?? '',
+      errorno: exceptionRes.errorno ?? exceptionRes.statusCode,
       path: request.url,
       ...exceptionRes,
     });
