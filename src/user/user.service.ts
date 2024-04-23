@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
@@ -44,15 +44,37 @@ export class UserService {
     }
   }
   async init(InitUse: InitUserDto, session) {
-    this.userRepository
+    try {
+      await this.userRepository
       .createQueryBuilder()
       .update(User)
       .set(InitUse)
       .where('openid=:openid', { openid: session.openid })
       .execute();
-    return {
-      success: 200,
-    };
+
+      const user = await this.userRepository.find({
+        where: { openid: session.openid },
+      });
+
+      if (user?.length) {
+        return user[0];
+      }
+      throw new HttpException(
+        {
+          errorno: 6,
+          errormsg: `未找到openid为${session.openid}的用户`,
+        },
+        HttpStatus.OK,
+      );
+    } catch (error) {
+      throw new HttpException(
+        {
+          errorno: 7,
+          errormsg: error,
+        },
+        HttpStatus.OK,
+      );
+    }
   }
 
   /** this api is only for internal module */
