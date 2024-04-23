@@ -13,24 +13,24 @@ export class UserService {
     const data = await axios.get(
       `https://api.weixin.qq.com/sns/jscode2session?appid=wx559e4273b8badf2a&secret=7b8954140d68ecf74f21f53b058138e6&grant_type=authorization_code&js_code=${code}`,
     );
-    if (data.data.errcode !== 0) {
-      const openid = 'woshishdskashfasjk';
-      // const { openid } = data.data
+    if (!data.data.errcode) {
+      // const openid = 'woshishdskashfasjk';
+      const { openid } = data.data;
 
       session.openid = openid;
       session.authenticated = true;
       session.nickName = nickName;
       session.avatarUrl = avatarUrl;
 
-      const user = await this.userRepository.find({
-        where: { openid: openid },
+      const user = await this.userRepository.findOne({
+        where: { id: openid },
       });
-      if (user.length) {
-        session.userInfo = user[0];
-        return { ...user[0] };
+      if (user) {
+        session.userInfo = user;
+        return { ...user };
       }
       await this.userRepository.save({
-        openid: openid,
+        id: openid,
         nickName: nickName,
         avatarUrl: avatarUrl,
       });
@@ -49,7 +49,7 @@ export class UserService {
       .createQueryBuilder()
       .update(User)
       .set(InitUse)
-      .where('openid=:openid', { openid: session.openid })
+      .where('id=:id', { id: session.openid })
       .execute();
 
       const user = await this.userRepository.find({
@@ -79,7 +79,7 @@ export class UserService {
 
   /** this api is only for internal module */
   async getUserInfo(openid: string) {
-    const user = await this.userRepository.find({ where: { openid: openid } });
+    const user = await this.userRepository.find({ where: { id: openid } });
     return user;
   }
 }
