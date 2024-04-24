@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { IsNumberArray } from 'src/common';
 
 export class CreateUserDto {
@@ -21,12 +21,12 @@ export class InitUserDto {
   identityID: string;
 
   @IsOptional()
-  @IsString()
-  talent: string;
+  @IsNumberArray()
+  talent: number[];
 
   @IsOptional()
-  @IsNumber()
-  groupId: number;
+  @IsString()
+  groupId: string;
 
   @IsOptional()
   @IsString()

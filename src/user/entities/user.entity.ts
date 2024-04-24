@@ -8,8 +8,8 @@ export class User {
   @Column('varchar', { name: 'nickName', length: 45 })
   nickName: string;
 
-  @Column('int', { name: 'groupId', nullable: true })
-  groupId: number;
+  @Column('string', { name: 'groupId', nullable: true })
+  groupId: string;
 
   @Column('varchar', {
     name: 'identityID',
@@ -24,6 +24,9 @@ export class User {
 
   @Column('json', { name: 'identity', nullable: true })
   identity: USER_IDENTITY | null;
+
+  @Column('json', { name: 'talent', nullable: true })
+  talent: number[];
 
   @Column('text', { name: 'confirmCode', nullable: true })
   confirmCode: string | null;
