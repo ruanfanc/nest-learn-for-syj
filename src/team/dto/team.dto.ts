@@ -3,7 +3,7 @@ import { IsBoolean, IsNotEmpty, IsNumber } from 'class-validator';
 export class JoinTeam {
   @IsNumber()
   @IsNotEmpty()
-  id: number;
+  id: string;
   @IsNotEmpty()
   @IsBoolean()
   pass: boolean;
