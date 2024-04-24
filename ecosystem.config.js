@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'youth-law-server',
       script: './dist/main.js',
-      instances: '2',
+      instances: '1',
       watch: true,
       ignore_watch: ['pm2logs', 'node_modules'],
       error_file: './pm2logs/err.log',
