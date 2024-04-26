@@ -37,7 +37,7 @@ export class CasesService {
         username: session.nickName,
         avatarUrl: session.avatarUrl,
         status: CASE_STATUS.WAIT_FOR_AUDIT,
-        type: isCase ? 1 : 0,
+        type: isCase ? 2 : 1,
       });
     }
   }

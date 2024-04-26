@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { CASE_STATUS, CASE_TYPE_MAP_VALUE } from '../types';
 
-@Entity('case', { schema: 'younglaw' })
+@Entity('cases', { schema: 'younglaw' })
 export class Case {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id: number;
@@ -27,11 +27,14 @@ export class Case {
   @Column('varchar', { name: 'createTime', length: 45 })
   createTime: string;
 
-  @Column('varchar', { name: 'username', length: 45 })
-  username: string;
+  @Column('varchar', { name: 'userId', length: 45 })
+  userId: string;
 
-  @Column('varchar', { name: 'userdesc', length: 45, nullable: true })
-  userdesc: string;
+  @Column('varchar', { name: 'relateGroup', length: 45 })
+  relateGroup: string;
+
+  @Column('json', { name: 'pendingRelateGroup', nullable: true })
+  pendingRelateGroup: string[];
 
   @Column('boolean', { name: 'isSubmit', nullable: true })
   isSubmit: boolean;
@@ -43,5 +46,5 @@ export class Case {
   status: CASE_STATUS;
 
   @Column('int', { name: 'type' })
-  type: 1 | 0;
+  type: 2 | 1;
 }

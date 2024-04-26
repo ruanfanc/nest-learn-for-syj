@@ -26,6 +26,7 @@ export const enum CASE_STATUS {
   WAIT_FOR_AUDIT = 5,
   // 帖子审核通过
   POST_AUDITED = 6,
+  POST_NOT_AUDITED = 7,
 }
 
 export const CASE_STATUS_MAP: { [key in CASE_STATUS]: string } = {
@@ -34,7 +35,8 @@ export const CASE_STATUS_MAP: { [key in CASE_STATUS]: string } = {
   3: '已完成 ',
   4: '草稿',
   5: '待审核',
-  6: ' 帖子审核通过',
+  6: '帖子审核通过',
+  7: '审核打回',
 };
 
 export const CASES_BUTTONS_MAP = {
@@ -43,6 +45,7 @@ export const CASES_BUTTONS_MAP = {
   3: '重新委托',
   4: '取消案件',
   5: '受理案件',
+  6: '审核案件',
 };
 
 export type CASES_BUTTONS_MAP_Value = (keyof typeof CASES_BUTTONS_MAP)[];
