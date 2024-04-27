@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { IsStringArray } from 'src/common';
 import { SubmitCaseDto } from './create-case.dto';
 
 export class UpdateCaseDto extends PartialType(SubmitCaseDto) {}
@@ -29,4 +30,22 @@ export class CaseListDto {
   @IsNotEmpty()
   @IsNumber()
   pageSize: number;
+  @IsOptional()
+  @IsString()
+  userId: string;
+  @IsOptional()
+  @IsStringArray()
+  status: string;
+  @IsOptional()
+  @IsString()
+  relateGroup: string;
+  @IsOptional()
+  @IsString()
+  pendingRelateGroup: string;
+  @IsOptional()
+  @IsString()
+  startTime: string;
+  @IsOptional()
+  @IsString()
+  endTime: string;
 }
