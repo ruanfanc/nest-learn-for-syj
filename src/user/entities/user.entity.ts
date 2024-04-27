@@ -23,7 +23,7 @@ export class User {
   avatarUrl: string | null;
 
   @Column('json', { name: 'identity', nullable: true })
-  identity: USER_IDENTITY | null;
+  identity: USER_IDENTITY[] | null;
 
   @Column('json', { name: 'talent', nullable: true })
   talent: number[];
