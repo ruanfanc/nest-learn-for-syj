@@ -1,12 +1,14 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
+import { USER_IDENTITY, User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import axios from 'axios';
 import { CreateUserDto, InitUserDto } from './dto/user.dto';
+import { TeamService } from 'src/team/team.service';
 
 @Injectable()
 export class UserService {
+  constructor(private teamService: TeamService) {}
   @InjectRepository(User) private userRepository: Repository<User>;
 
   async login({ code, nickName, avatarUrl }: CreateUserDto, session) {
@@ -42,6 +44,7 @@ export class UserService {
       const user = await this.userRepository.findOne({
         where: { id: openid },
       });
+
       if (user) {
         session.userInfo = user;
         return { ...user };
@@ -71,13 +74,20 @@ export class UserService {
         .where('id=:id', { id: session.openid })
         .execute();
 
-      const user = await this.userRepository.find({
+      const user = await this.userRepository.findOne({
         where: { id: session.openid },
       });
 
-      if (user?.length) {
-        return user[0];
+      const identity = user.identity;
+
+      if (identity.includes(USER_IDENTITY.TEACHER)) {
+        await this.teamService.createTeam(InitUse.groupId, session.openid);
       }
+
+      if (user) {
+        return user;
+      }
+
       throw new HttpException(
         {
           errorno: 6,
