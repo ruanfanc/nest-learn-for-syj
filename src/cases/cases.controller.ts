@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, Session } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Session,
+  Query,
+} from '@nestjs/common';
 import { CasesService } from './cases.service';
 import { EditCaseDto } from './dto/create-case.dto';
 import { AuditCaseDto, CaseListDto } from './dto/update-case.dto';
@@ -12,8 +20,8 @@ export class CasesController {
     return this.casesService.editCase(editCaseDto, session);
   }
 
-  @Get('/detail:id')
-  detail(@Param('id') id: string) {
+  @Get('/detail')
+  detail(@Query('id') id: string) {
     return this.casesService.detail(id);
   }
 
