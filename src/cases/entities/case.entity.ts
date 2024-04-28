@@ -14,6 +14,9 @@ export class Case {
 
   @Column('json', { name: 'caseType', nullable: true })
   caseType: CASE_TYPE_MAP_VALUE;
+  /** 每当案件被审核时加上该标记true，每当案件被编辑，更新它的审核状态为false */
+  @Column('boolean', { name: 'isAudited', nullable: true })
+  isAudited: boolean;
 
   @Column('text', { name: 'auditComment', nullable: true })
   auditComment: string;

@@ -4,13 +4,15 @@ import { Repository } from 'typeorm';
 import { EditCaseDto } from './dto/create-case.dto';
 import { AuditCaseDto, CaseListDto } from './dto/update-case.dto';
 import { Case } from './entities/case.entity';
-import { CASE_STATUS } from './types';
+import { CASES_BUTTONS_MAP_Value, CASE_STATUS } from './types';
 import * as moment from 'moment';
-import { USER_IDENTITY } from 'src/user/entities/user.entity';
+import { User, USER_IDENTITY } from 'src/user/entities/user.entity';
+import { Team } from 'src/team/entities/team.entity';
 
 @Injectable()
 export class CasesService {
   @InjectRepository(Case) private caseRepository: Repository<Case>;
+  @InjectRepository(Team) private teamRepository: Repository<Team>;
 
   async editCase(_editCaseDto: EditCaseDto, session) {
     if (_editCaseDto.id) {
@@ -42,15 +44,60 @@ export class CasesService {
     }
   }
 
-  async detail(id: string) {
+  async detail(id: string, session: { userInfo: User }) {
     const caseFinded = await this.caseRepository.findOne({
       where: { id: Number(id) },
     });
-
+    console.log('session: ', session);
     if (!caseFinded) {
       this.noCaseError(id);
     }
-    return caseFinded;
+    const getButtons = async () => {
+      let buttons: CASES_BUTTONS_MAP_Value = [];
+
+      if (caseFinded.userId === session.userInfo.id) {
+        buttons.push(1);
+        buttons.push(5);
+        // ============= 重新委托团队 ==================
+        if (caseFinded.status === CASE_STATUS.PROCESSING) {
+          buttons.push(3);
+        }
+      } else {
+        // ============== 详谈 ===================
+        buttons.push(2);
+
+        // ======================= 放弃受理 ===========================
+        const team = await this.teamRepository.findOne({
+          where: { id: session.userInfo.groupId },
+          select: ['admins'],
+        });
+
+        const isTeamAdmin = !!team?.admins?.includes(session.userInfo.id);
+
+        if (session.userInfo.groupId === caseFinded.relateGroup) {
+          if (isTeamAdmin) {
+            buttons.push(4);
+          }
+        }
+        if (caseFinded.status === CASE_STATUS.WAITTING) {
+          buttons.push(6);
+        }
+        if (
+          caseFinded.status === CASE_STATUS.WAIT_FOR_AUDIT &&
+          session.userInfo.identity.includes(USER_IDENTITY.MANAGER)
+        ) {
+          buttons.push(7);
+        }
+      }
+      return buttons;
+    };
+
+    return {
+      detail: {
+        ...caseFinded,
+        buttons: await getButtons(),
+      },
+    };
   }
 
   async audit({ id, auditComment, isPass }: AuditCaseDto, session) {

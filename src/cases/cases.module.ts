@@ -4,11 +4,12 @@ import { CasesController } from './cases.controller';
 import { UserModule } from 'src/user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Case } from './entities/case.entity';
+import { Team } from 'src/team/entities/team.entity';
 
 @Module({
   imports: [
     UserModule, // 导入用户模块
-    TypeOrmModule.forFeature([Case]),
+    TypeOrmModule.forFeature([Case, Team]),
   ],
   controllers: [CasesController],
   providers: [CasesService],

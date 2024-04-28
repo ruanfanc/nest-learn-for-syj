@@ -21,8 +21,8 @@ export class CasesController {
   }
 
   @Get('/detail')
-  detail(@Query('id') id: string) {
-    return this.casesService.detail(id);
+  detail(@Query('id') id: string, @Session() session) {
+    return this.casesService.detail(id, session);
   }
 
   @Post('/audit')

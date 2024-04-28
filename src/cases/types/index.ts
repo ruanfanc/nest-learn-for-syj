@@ -27,6 +27,7 @@ export const enum CASE_STATUS {
   // 帖子审核通过
   POST_AUDITED = 6,
   POST_NOT_AUDITED = 7,
+  DELETED = 8,
 }
 
 export const CASE_STATUS_MAP: { [key in CASE_STATUS]: string } = {
@@ -37,15 +38,17 @@ export const CASE_STATUS_MAP: { [key in CASE_STATUS]: string } = {
   5: '待审核',
   6: '帖子审核通过',
   7: '审核打回',
+  8: '已删除',
 };
 
 export const CASES_BUTTONS_MAP = {
   1: '编辑',
   2: '详谈',
-  3: '重新委托',
-  4: '取消案件',
-  5: '受理案件',
-  6: '审核案件',
+  3: '重新委托团队',
+  4: '放弃受理该案件',
+  5: '删除案件',
+  6: '受理案件',
+  7: '审核案件',
 };
 
 export type CASES_BUTTONS_MAP_Value = (keyof typeof CASES_BUTTONS_MAP)[];
