@@ -1,6 +1,15 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import {
+  And,
+  ArrayContains,
+  Between,
+  Equal,
+  FindOptionsWhere,
+  IsNull,
+  Not,
+  Repository,
+} from 'typeorm';
 import { EditCaseDto } from './dto/create-case.dto';
 import { AuditCaseDto, CaseListDto } from './dto/update-case.dto';
 import { Case } from './entities/case.entity';
@@ -8,6 +17,7 @@ import { CASES_BUTTONS_MAP_Value, CASE_STATUS } from './types';
 import * as moment from 'moment';
 import { User, USER_IDENTITY } from 'src/user/entities/user.entity';
 import { Team } from 'src/team/entities/team.entity';
+import { returnEmptyIfValueEmpty } from 'src/common/utils';
 
 @Injectable()
 export class CasesService {
@@ -125,11 +135,45 @@ export class CasesService {
     return { success: true };
   }
 
-  async findAll({ pageNo, pageSize }: CaseListDto) {
+  async findAll({
+    pageNo,
+    pageSize,
+    userId,
+    status,
+    groupId,
+    startTime,
+    endTime,
+  }: CaseListDto) {
     const skip = (pageNo - 1) * pageSize;
+    const basicParamSelect: FindOptionsWhere<Case> = {
+      ...returnEmptyIfValueEmpty('userId', userId),
+      ...returnEmptyIfValueEmpty('status', status),
+      ...returnEmptyIfValueEmpty(
+        'createTime',
+        startTime &&
+          endTime &&
+          And(Not(Equal(null)), Between(startTime, endTime)),
+      ),
+    };
+    const finalSearchParams = [
+      {
+        ...basicParamSelect,
+        ...returnEmptyIfValueEmpty('relateGroup', groupId),
+      },
+      {
+        ...basicParamSelect,
+        // ...returnEmptyIfValueEmpty(
+        //   'pendingRelateGroup',
+        //   groupId && ArrayContains([groupId]),
+        // ),
+      },
+    ];
+    console.log(finalSearchParams);
+
     const [data, total] = await this.caseRepository.findAndCount({
       take: pageSize,
       skip: skip,
+      where: finalSearchParams,
     });
 
     return {

@@ -7,6 +7,7 @@ import {
   IsString,
 } from 'class-validator';
 import { IsStringArray } from 'src/common';
+import { CASE_STATUS } from '../types';
 import { SubmitCaseDto } from './create-case.dto';
 
 export class UpdateCaseDto extends PartialType(SubmitCaseDto) {}
@@ -35,13 +36,10 @@ export class CaseListDto {
   userId: string;
   @IsOptional()
   @IsStringArray()
-  status: string;
+  status: CASE_STATUS;
   @IsOptional()
   @IsString()
-  relateGroup: string;
-  @IsOptional()
-  @IsString()
-  pendingRelateGroup: string;
+  groupId: string;
   @IsOptional()
   @IsString()
   startTime: string;
