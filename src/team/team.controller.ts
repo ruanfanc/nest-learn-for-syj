@@ -1,10 +1,15 @@
 import { Controller, Post, Body, Session, Get, Param } from '@nestjs/common';
 import { TeamService } from './team.service';
-import { JoinTeam, Members, AddManager } from './dto/team.dto';
+import { JoinTeam, Members, AddManager, ApplyTeam } from './dto/team.dto';
 
 @Controller('team')
 export class TeamController {
   constructor(private readonly teamService: TeamService) {}
+
+  @Post('/apply')
+  apply(@Body() applyTeam: ApplyTeam) {
+    return this.teamService.apply(applyTeam);
+  }
 
   @Post('/audit')
   audit(@Body() joinTeam: JoinTeam, @Session() session) {

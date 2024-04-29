@@ -2,11 +2,9 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   And,
-  ArrayContains,
   Between,
   Equal,
   FindOptionsWhere,
-  IsNull,
   Not,
   Repository,
 } from 'typeorm';
@@ -63,7 +61,7 @@ export class CasesService {
       this.noCaseError(id);
     }
     const getButtons = async () => {
-      let buttons: CASES_BUTTONS_MAP_Value = [];
+      const buttons: CASES_BUTTONS_MAP_Value = [];
 
       if (caseFinded.userId === session.userInfo.id) {
         buttons.push(1);

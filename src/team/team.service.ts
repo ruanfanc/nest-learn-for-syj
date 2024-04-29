@@ -1,16 +1,49 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { AddManager, JoinTeam } from './dto/team.dto';
+import { AddManager, ApplyTeam, JoinTeam } from './dto/team.dto';
 import { Team } from './entities/team.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
+import { TeamApply } from './entities/teamApply.entity';
+import moment from 'moment';
 
 @Injectable()
 export class TeamService {
   @InjectRepository(Team) private teamRepository: Repository<Team>;
+  @InjectRepository(Team) private teamApplyRepository: Repository<TeamApply>;
   @InjectRepository(User) private userRepository: Repository<User>;
 
-  audit(joinTeam: JoinTeam, session) {}
+  async audit(joinTeam: JoinTeam, session) {
+    const { groupId, userId, isPass } = joinTeam;
+    const team = await this.teamRepository.findOne({
+      where: { id: groupId },
+    });
+    this.testTeamAdmin(team, session.openid);
+    if (isPass) {
+      await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set({ groupId })
+        .where('id=:id', { id: userId })
+        .execute();
+    }
+    return { success: true };
+  }
+
+  async apply(applyTeam: ApplyTeam) {
+    const { userId, groupId } = applyTeam;
+
+    const team = await this.userRepository.findOne({
+      where: { id: groupId },
+    });
+    this.testTeam(team, applyTeam.groupId);
+    await this.teamApplyRepository.save({
+      userId,
+      groupId,
+      createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+    });
+    return { success: true };
+  }
 
   async list() {
     const teams = await this.userRepository

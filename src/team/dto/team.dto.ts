@@ -1,12 +1,25 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
 
 export class JoinTeam {
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
-  id: string;
+  userId: string;
   @IsNotEmpty()
   @IsBoolean()
-  pass: boolean;
+  isPass: boolean;
+  @IsNotEmpty()
+  @IsString()
+  groupId: string;
+}
+
+export class ApplyTeam {
+  @IsString()
+  @IsNotEmpty()
+  userId: string;
+
+  @IsNotEmpty()
+  @IsString()
+  groupId: string;
 }
 
 export class Members {
