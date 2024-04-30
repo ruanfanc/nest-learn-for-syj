@@ -31,7 +31,7 @@ export class CasesService {
         this.noCaseError(_editCaseDto.id);
       }
       // 编辑
-      this.caseRepository
+      await this.caseRepository
         .createQueryBuilder()
         .update(Case)
         .set(_editCaseDto)
@@ -41,7 +41,7 @@ export class CasesService {
       // 新建
       const isCase = session.userInfo.identity.includes(USER_IDENTITY.PUBLIC);
 
-      this.caseRepository.save({
+      await this.caseRepository.save({
         ..._editCaseDto,
         createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
         username: session.nickName,
@@ -50,6 +50,8 @@ export class CasesService {
         type: isCase ? 2 : 1,
       });
     }
+
+    return { success: true };
   }
 
   async detail(id: string, session: { userInfo: User }) {
