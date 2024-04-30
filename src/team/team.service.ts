@@ -5,7 +5,7 @@ import { Team } from './entities/team.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { TeamApply } from './entities/teamApply.entity';
-import moment from 'moment';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class TeamService {
@@ -40,7 +40,7 @@ export class TeamService {
     await this.teamApplyRepository.save({
       userId,
       groupId,
-      createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+      createTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
     });
     return { success: true };
   }

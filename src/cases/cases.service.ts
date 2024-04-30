@@ -1,21 +1,13 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  And,
-  Between,
-  Equal,
-  FindOptionsWhere,
-  Not,
-  Repository,
-} from 'typeorm';
+import { Repository } from 'typeorm';
 import { EditCaseDto } from './dto/create-case.dto';
 import { AuditCaseDto, CaseListDto } from './dto/update-case.dto';
 import { Case } from './entities/case.entity';
 import { CASES_BUTTONS_MAP_Value, CASE_STATUS } from './types';
-import * as moment from 'moment';
 import { User, USER_IDENTITY } from 'src/user/entities/user.entity';
 import { Team } from 'src/team/entities/team.entity';
-import { returnEmptyIfValueEmpty } from 'src/common/utils';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class CasesService {
@@ -43,8 +35,7 @@ export class CasesService {
 
       await this.caseRepository.save({
         ..._editCaseDto,
-        createTime: moment().format('YYYY-MM-DD HH:mm:ss'),
-        username: session.nickName,
+        userId: session.openid,
         avatarUrl: session.avatarUrl,
         status: CASE_STATUS.WAIT_FOR_AUDIT,
         type: isCase ? 2 : 1,
@@ -143,41 +134,35 @@ export class CasesService {
     groupId,
     startTime,
     endTime,
+    orderByTime = true,
   }: CaseListDto) {
     const skip = (pageNo - 1) * pageSize;
-    const basicParamSelect: FindOptionsWhere<Case> = {
-      ...returnEmptyIfValueEmpty('userId', userId),
-      ...returnEmptyIfValueEmpty('status', status),
-      ...returnEmptyIfValueEmpty(
-        'createTime',
-        startTime &&
-          endTime &&
-          And(Not(Equal(null)), Between(startTime, endTime)),
-      ),
-    };
-    const finalSearchParams = [
-      {
-        ...basicParamSelect,
-        ...returnEmptyIfValueEmpty('relateGroup', groupId),
-      },
-      {
-        ...basicParamSelect,
-        // ...returnEmptyIfValueEmpty(
-        //   'pendingRelateGroup',
-        //   groupId && ArrayContains([groupId]),
-        // ),
-      },
-    ];
-    console.log(finalSearchParams);
+    let query = this.caseRepository.createQueryBuilder('case');
+    if (userId) query = query.where('case.userId = :userId', { userId });
 
-    const [data, total] = await this.caseRepository.findAndCount({
-      take: pageSize,
-      skip: skip,
-      where: finalSearchParams,
-    });
+    if (status && status.length)
+      query = query.andWhere('case.status IN (:...status)', { status });
+
+    if (groupId)
+      query = query.where('case.relateGroup = :groupId', { groupId });
+
+    if (startTime && endTime)
+      query = query.where('case.createTime BETWEEN :start AND :end', {
+        start: startTime,
+        end: endTime,
+      });
+
+    const [data, total] = await query
+      .orderBy('case.createTime', orderByTime ? 'DESC' : 'ASC')
+      .skip(skip)
+      .take(pageSize)
+      .getManyAndCount();
 
     return {
-      cases: data,
+      cases: data.map((item) => ({
+        ...item,
+        createTime: dayjs(item.createTime).format('YYYY-MM-DD HH:mm:ss'),
+      })),
       total,
     };
   }

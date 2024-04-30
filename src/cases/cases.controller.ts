@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Session,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Session, Query } from '@nestjs/common';
 import { CasesService } from './cases.service';
 import { EditCaseDto } from './dto/create-case.dto';
 import { AuditCaseDto, CaseListDto } from './dto/update-case.dto';

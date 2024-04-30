@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { IsStringArray } from 'src/common';
+import { IsNumberArray } from 'src/common';
 import { CASE_STATUS } from '../types';
 import { SubmitCaseDto } from './create-case.dto';
 
@@ -35,8 +35,8 @@ export class CaseListDto {
   @IsString()
   userId: string;
   @IsOptional()
-  @IsStringArray()
-  status: CASE_STATUS;
+  @IsNumberArray()
+  status: CASE_STATUS[];
   @IsOptional()
   @IsString()
   groupId: string;
@@ -46,4 +46,7 @@ export class CaseListDto {
   @IsOptional()
   @IsString()
   endTime: string;
+  @IsOptional()
+  @IsBoolean()
+  orderByTime: boolean;
 }

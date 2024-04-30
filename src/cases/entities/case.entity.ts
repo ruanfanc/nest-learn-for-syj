@@ -1,4 +1,9 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { CASE_STATUS, CASE_TYPE_MAP_VALUE } from '../types';
 
 @Entity('cases', { schema: 'younglaw' })
@@ -27,13 +32,13 @@ export class Case {
   @Column('text', { name: 'avatarUrl', nullable: true })
   avatarUrl: string;
 
-  @Column('varchar', { name: 'createTime', length: 45 })
+  @CreateDateColumn({ type: 'timestamp', name: 'createTime' })
   createTime: string;
 
   @Column('varchar', { name: 'userId', length: 45 })
   userId: string;
 
-  @Column('varchar', { name: 'relateGroup', length: 45 })
+  @Column('varchar', { name: 'relateGroup', length: 45, nullable: true })
   relateGroup: string;
 
   @Column('json', { name: 'pendingRelateGroup', nullable: true })

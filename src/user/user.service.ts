@@ -17,16 +17,11 @@ export class UserService {
         where: { nickName },
       });
 
-      session.openid = code;
+      session.openid = 'woshishdskashfasjk';
       session.authenticated = true;
       session.nickName = nickName;
       session.avatarUrl = avatarUrl;
-      const userInfo = {
-        id: code,
-        nickName,
-        avatarUrl,
-      };
-      session.userInfo = userInfo;
+      session.userInfo = user;
       return user;
     }
 
