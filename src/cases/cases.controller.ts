@@ -17,6 +17,11 @@ export class CasesController {
     return this.casesService.detail(id, session);
   }
 
+  @Post('/delete')
+  delete(@Body() { id }: { id: string }, @Session() session) {
+    return this.casesService.delete(id, session);
+  }
+
   @Post('/audit')
   audit(@Body() auditBody: AuditCaseDto, @Session() session) {
     return this.casesService.audit(auditBody, session);

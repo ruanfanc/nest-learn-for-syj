@@ -49,7 +49,7 @@ export class CasesService {
     const caseFinded = await this.caseRepository.findOne({
       where: { id: Number(id) },
     });
-    console.log('session: ', session);
+
     if (!caseFinded) {
       this.noCaseError(id);
     }
@@ -80,15 +80,19 @@ export class CasesService {
             buttons.push(4);
           }
         }
-        if (caseFinded.status === CASE_STATUS.WAITTING) {
+        if (
+          caseFinded.status === CASE_STATUS.WAITTING &&
+          session.userInfo.groupId
+        ) {
           buttons.push(6);
         }
-        if (
-          caseFinded.status === CASE_STATUS.WAIT_FOR_AUDIT &&
-          session.userInfo.identity.includes(USER_IDENTITY.MANAGER)
-        ) {
-          buttons.push(7);
-        }
+      }
+
+      if (
+        caseFinded.status === CASE_STATUS.WAIT_FOR_AUDIT &&
+        session.userInfo.identity.includes(USER_IDENTITY.MANAGER)
+      ) {
+        buttons.push(7);
       }
       return buttons;
     };
@@ -99,6 +103,32 @@ export class CasesService {
         buttons: await getButtons(),
       },
     };
+  }
+
+  async delete(id: string, session: { userInfo: User }) {
+    const caseFinded = await this.caseRepository.findOne({
+      where: { id: Number(id) },
+    });
+
+    if (!caseFinded) {
+      this.noCaseError(id);
+    }
+
+    if (caseFinded.userId === session.userInfo.id) {
+      this.caseRepository
+        .createQueryBuilder()
+        .update(Case)
+        .set({
+          status: CASE_STATUS.DELETED,
+        })
+        .where('id=:id', { id })
+        .execute();
+      return {
+        success: true,
+      };
+    } else {
+      return this.notOwnCase();
+    }
   }
 
   async audit({ id, auditComment, isPass }: AuditCaseDto, session) {
@@ -182,6 +212,19 @@ export class CasesService {
       {
         errorno: 4,
         errormsg: `只有管理员可以审核`,
+      },
+      HttpStatus.UNAUTHORIZED,
+    );
+  }
+
+  notOwnCase() {
+    throw new HttpException(
+      {
+        errorno: 10,
+        errormsg: `不是您的案件喔~`,
+        data: {
+          success: false,
+        },
       },
       HttpStatus.UNAUTHORIZED,
     );
