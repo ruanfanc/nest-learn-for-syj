@@ -45,7 +45,7 @@ jobs:
           ssh root@${{secrets.REMOTE_HOST}} "
             cd ${{secrets.REMOTE_SERVER_DIR}};
             ls -a;
-            source ~/.bashrc
+            source ~/.nvm/nvm.sh
             nvm use 16.0.0
             npm ci
             chown -R root:root .
