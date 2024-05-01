@@ -3,11 +3,11 @@ name: deploy youth-law-server
 on:
   push:
     branches:
-      - "master" # 针对 master 分支
+      - 'master' # 针对 master 分支
     paths:
-      - ".github/workflows/*"
-      - "src/**"
-      - "package.json"
+      - '.github/workflows/*'
+      - 'src/**'
+      - 'package.json'
 
 jobs:
   deploy:
@@ -17,7 +17,7 @@ jobs:
       - name: 拉取项目代码
         uses: actions/checkout@v3
         with:
-          path: "clone-files"
+          path: 'clone-files'
 
       - name: 设置 id_rsa
         run: |
@@ -45,6 +45,7 @@ jobs:
           ssh root@${{secrets.REMOTE_HOST}} "
             cd ${{secrets.REMOTE_SERVER_DIR}};
             ls -a;
+            source ~/.bashrc
             nvm use 16.0.0
             npm ci
             chown -R root:root .
