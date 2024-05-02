@@ -2,7 +2,14 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JsonContains, Repository } from 'typeorm';
 import { EditCaseDto } from './dto/create-case.dto';
-import { AuditCaseDto, CaseListDto } from './dto/update-case.dto';
+import {
+  AuditCaseDto,
+  CaseListDto,
+  AgreeHandlepCaseDto,
+  ReEntrustCaseDto,
+  HandlepCaseDto,
+  DeleteDto,
+} from './dto/update-case.dto';
 import { Case } from './entities/case.entity';
 import { CASES_BUTTONS_MAP_Value, CASE_STATUS } from './types';
 import { User, USER_IDENTITY } from 'src/user/entities/user.entity';
@@ -88,10 +95,7 @@ export class CasesService {
         }
       }
 
-      if (
-        caseFinded.status === CASE_STATUS.WAIT_FOR_AUDIT &&
-        session.userInfo.identity.includes(USER_IDENTITY.MANAGER)
-      ) {
+      if (session.userInfo.identity.includes(USER_IDENTITY.MANAGER)) {
         buttons.push(7);
       }
       return buttons;
@@ -100,14 +104,15 @@ export class CasesService {
     return {
       detail: {
         ...caseFinded,
+        createTime: dayjs(caseFinded.createTime).format('YYYY-MM-DD HH:mm:ss'),
         buttons: await getButtons(),
       },
     };
   }
 
-  async delete(id: string, session: { userInfo: User }) {
+  async delete({ id }: DeleteDto, session: { userInfo: User }) {
     const caseFinded = await this.caseRepository.findOne({
-      where: { id: Number(id) },
+      where: { id },
     });
 
     if (!caseFinded) {
@@ -227,23 +232,145 @@ export class CasesService {
     };
   }
 
+  async handle(
+    { caseId, isHandle }: HandlepCaseDto,
+    session: { userInfo: User },
+  ) {
+    console.log(session.userInfo);
+    const groupId = session.userInfo.groupId;
+    const caseById = await this.caseRepository.findOne({
+      where: { id: caseId },
+    });
+    if (!caseById) {
+      return this.noCaseError(caseId);
+    }
+    const team = await this.teamRepository.findOne({
+      where: { id: session.userInfo.groupId },
+    });
+    console.log(team);
+
+    if (!team.admins?.find((item) => item === session.userInfo.id)) {
+      return this.noAuth();
+    }
+
+    if (isHandle) {
+      await this.caseRepository
+        .createQueryBuilder()
+        .update(Case)
+        .set({
+          pendingRelateGroup: Array.from(
+            new Set([...caseById.pendingRelateGroup, groupId]),
+          ),
+        })
+        .where('id=:id', { id: caseId })
+        .execute();
+    } else {
+      if (caseById.relateGroup === groupId) {
+        await this.caseRepository
+          .createQueryBuilder()
+          .update(Case)
+          .set({
+            relateGroup: null,
+            status: CASE_STATUS.WAITTING,
+          })
+          .where('id=:id', { id: caseId })
+          .execute();
+      } else {
+        await this.caseRepository
+          .createQueryBuilder()
+          .update(Case)
+          .set({
+            pendingRelateGroup: caseById.pendingRelateGroup.filter(
+              (item) => item !== groupId,
+            ),
+          })
+          .where('id=:id', { id: caseId })
+          .execute();
+      }
+    }
+    return { success: true };
+  }
+
+  async agreeHandle(
+    { caseId, groupId }: AgreeHandlepCaseDto,
+    session: { userInfo: User },
+  ) {
+    console.log(session.userInfo);
+    const caseById = await this.caseRepository.findOne({
+      where: { id: caseId },
+    });
+    if (!caseById) {
+      return this.noCaseError(caseId);
+    }
+    const team = await this.teamRepository.findOne({
+      where: { id: session.userInfo.groupId },
+    });
+    if (!team.admins?.find((item) => item === session.userInfo.id)) {
+      return this.noAuth();
+    }
+
+    if (!caseById.pendingRelateGroup.includes(groupId)) {
+      return this.groupHasGiveUp();
+    }
+
+    await this.caseRepository
+      .createQueryBuilder()
+      .update(Case)
+      .set({
+        pendingRelateGroup: [],
+        relateGroup: groupId,
+        status: CASE_STATUS.PROCESSING,
+      })
+      .where('id=:id', { id: caseId })
+      .execute();
+    return { success: true };
+  }
+
+  async reEntrustGroup(
+    { caseId }: ReEntrustCaseDto,
+    session: { userInfo: User },
+  ) {
+    console.log(session.userInfo);
+    const caseById = await this.caseRepository.findOne({
+      where: { id: caseId },
+    });
+    if (!caseById) {
+      this.noCaseError(caseId);
+    }
+
+    if (caseById.userId !== session.userInfo.groupId) {
+      return this.notOwnCase();
+    }
+
+    await this.caseRepository
+      .createQueryBuilder()
+      .update(Case)
+      .set({
+        relateGroup: null,
+        status: CASE_STATUS.WAITTING,
+      })
+      .where('id=:id', { id: caseId })
+      .execute();
+    return { success: true };
+  }
+
   noCaseError(id) {
     throw new HttpException(
       {
         errorno: 4,
         errormsg: `未找到id为${id}的帖子、案件`,
       },
-      HttpStatus.BAD_REQUEST,
+      HttpStatus.OK,
     );
   }
 
   noAuth() {
     throw new HttpException(
       {
-        errorno: 4,
+        errorno: 9,
         errormsg: `只有管理员可以审核`,
       },
-      HttpStatus.UNAUTHORIZED,
+      HttpStatus.OK,
     );
   }
 
@@ -256,7 +383,20 @@ export class CasesService {
           success: false,
         },
       },
-      HttpStatus.UNAUTHORIZED,
+      HttpStatus.OK,
+    );
+  }
+
+  groupHasGiveUp() {
+    throw new HttpException(
+      {
+        errorno: 11,
+        errormsg: `该团队已经放弃受理`,
+        data: {
+          success: false,
+        },
+      },
+      HttpStatus.OK,
     );
   }
 }

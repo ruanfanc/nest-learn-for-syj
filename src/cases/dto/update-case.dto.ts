@@ -12,6 +12,12 @@ import { SubmitCaseDto } from './create-case.dto';
 
 export class UpdateCaseDto extends PartialType(SubmitCaseDto) {}
 
+export class DeleteDto {
+  @IsNotEmpty()
+  @IsNumber()
+  id: number;
+}
+
 export class AuditCaseDto {
   @IsNotEmpty()
   @IsBoolean()
@@ -22,6 +28,30 @@ export class AuditCaseDto {
   @IsOptional()
   @IsString()
   auditComment: string;
+}
+
+export class HandlepCaseDto {
+  @IsNotEmpty()
+  @IsNumber()
+  caseId: number;
+  @IsNotEmpty()
+  @IsBoolean()
+  isHandle: boolean;
+}
+
+export class AgreeHandlepCaseDto {
+  @IsNotEmpty()
+  @IsNumber()
+  caseId: number;
+  @IsNotEmpty()
+  @IsString()
+  groupId: string;
+}
+
+export class ReEntrustCaseDto {
+  @IsNotEmpty()
+  @IsNumber()
+  caseId: number;
 }
 
 export class CaseListDto {
