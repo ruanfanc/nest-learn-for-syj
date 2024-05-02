@@ -38,7 +38,7 @@ export class CasesService {
         .execute();
     } else {
       // 新建
-      const isCase = session.userInfo.identity.includes(USER_IDENTITY.PUBLIC);
+      const isCase = session.userInfo.identity?.includes(USER_IDENTITY.PUBLIC);
 
       await this.caseRepository.save({
         ..._editCaseDto,
@@ -145,7 +145,6 @@ export class CasesService {
   }
 
   async audit({ id, auditComment, isPass }: AuditCaseDto, session) {
-    console.log(session.userInfo);
     if (!session.userInfo.identity.includes(USER_IDENTITY.MANAGER)) {
       this.noAuth();
     }
@@ -199,8 +198,6 @@ export class CasesService {
     const skip = (pageNo - 1) * pageSize;
     let query = this.caseRepository.createQueryBuilder('case');
     if (related && !userId && !groupId) {
-      console.log('session.userInfo: ', session.userInfo);
-
       query = query.where(
         '(case.userId = :userId OR case.relateGroup = :groupId OR JSON_CONTAINS(case.pendingRelateGroup, :value))',
         {
@@ -210,7 +207,6 @@ export class CasesService {
         },
       );
     } else {
-      console.log(related, userId, groupId);
       if (userId) query = query.where('case.userId = :userId', { userId });
 
       if (groupId)
@@ -256,7 +252,6 @@ export class CasesService {
     { caseId, isHandle }: HandlepCaseDto,
     session: { userInfo: User },
   ) {
-    console.log(session.userInfo);
     const groupId = session.userInfo.groupId;
     const caseById = await this.caseRepository.findOne({
       where: { id: caseId },
@@ -267,8 +262,6 @@ export class CasesService {
     const team = await this.teamRepository.findOne({
       where: { id: session.userInfo.groupId },
     });
-    console.log(team);
-
     if (!team.admins?.find((item) => item === session.userInfo.id)) {
       return this.noAuth();
     }
@@ -315,7 +308,6 @@ export class CasesService {
     { caseId, groupId }: AgreeHandlepCaseDto,
     session: { userInfo: User },
   ) {
-    console.log(session.userInfo);
     const caseById = await this.caseRepository.findOne({
       where: { id: caseId },
     });
@@ -350,7 +342,6 @@ export class CasesService {
     { caseId }: ReEntrustCaseDto,
     session: { userInfo: User },
   ) {
-    console.log(session.userInfo);
     const caseById = await this.caseRepository.findOne({
       where: { id: caseId },
     });
