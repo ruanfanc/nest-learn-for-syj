@@ -7,6 +7,7 @@ import {
   CaseListDto,
   DeleteDto,
   HandlepCaseDto,
+  ReEntrustCaseDto,
 } from './dto/update-case.dto';
 
 @Controller('cases')
@@ -44,7 +45,7 @@ export class CasesController {
   }
 
   @Post('/reEntrustGroup')
-  reEntrustGroup(@Body() body: AgreeHandlepCaseDto, @Session() session) {
+  reEntrustGroup(@Body() body: ReEntrustCaseDto, @Session() session) {
     return this.casesService.reEntrustGroup(body, session);
   }
 

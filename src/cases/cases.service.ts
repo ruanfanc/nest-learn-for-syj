@@ -358,7 +358,7 @@ export class CasesService {
       this.noCaseError(caseId);
     }
 
-    if (caseById.userId !== session.userInfo.groupId) {
+    if (caseById.userId !== session.userInfo.id) {
       return this.notOwnCase();
     }
 
