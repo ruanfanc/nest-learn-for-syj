@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { JsonContains, Repository } from 'typeorm';
 import { EditCaseDto } from './dto/create-case.dto';
 import { AuditCaseDto, CaseListDto } from './dto/update-case.dto';
 import { Case } from './entities/case.entity';
@@ -156,30 +156,60 @@ export class CasesService {
     return { success: true };
   }
 
-  async findAll({
-    pageNo,
-    pageSize,
-    userId,
-    status,
-    groupId,
-    startTime,
-    endTime,
-    orderByTime = true,
-  }: CaseListDto) {
+  async findAll(
+    {
+      pageNo,
+      pageSize,
+      userId,
+      status,
+      groupId,
+      startTime,
+      endTime,
+      orderByTime = true,
+      related,
+      type,
+    }: CaseListDto,
+    session: { userInfo: User },
+  ) {
     const skip = (pageNo - 1) * pageSize;
     let query = this.caseRepository.createQueryBuilder('case');
-    if (userId) query = query.where('case.userId = :userId', { userId });
+    if (related && !userId && !groupId) {
+      console.log('session.userInfo: ', session.userInfo);
+
+      query = query.where(
+        '(case.userId = :userId OR case.relateGroup = :groupId OR JSON_CONTAINS(case.pendingRelateGroup, :value))',
+        {
+          userId: session.userInfo.id,
+          groupId: session.userInfo.groupId,
+          value: JSON.stringify(session.userInfo.groupId),
+        },
+      );
+    } else {
+      console.log(related, userId, groupId);
+      if (userId) query = query.where('case.userId = :userId', { userId });
+
+      if (groupId)
+        query = query.andWhere(
+          '(case.relateGroup = :groupId OR JSON_CONTAINS(case.pendingRelateGroup, :value))',
+          {
+            groupId: session.userInfo.groupId,
+            value: JSON.stringify(session.userInfo.groupId),
+          },
+        );
+    }
 
     if (status && status.length)
       query = query.andWhere('case.status IN (:...status)', { status });
 
-    if (groupId)
-      query = query.where('case.relateGroup = :groupId', { groupId });
-
     if (startTime && endTime)
-      query = query.where('case.createTime BETWEEN :start AND :end', {
+      query = query.andWhere('case.createTime BETWEEN :start AND :end', {
         start: startTime,
         end: endTime,
+      });
+
+    if (type)
+      query = query.andWhere('case.type = :type', {
+        type,
       });
 
     const [data, total] = await query

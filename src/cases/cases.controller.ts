@@ -28,7 +28,7 @@ export class CasesController {
   }
 
   @Post('/list')
-  list(@Body() listBody: CaseListDto) {
-    return this.casesService.findAll(listBody);
+  list(@Body() listBody: CaseListDto, @Session() session) {
+    return this.casesService.findAll(listBody, session);
   }
 }

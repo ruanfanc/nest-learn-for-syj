@@ -49,4 +49,12 @@ export class CaseListDto {
   @IsOptional()
   @IsBoolean()
   orderByTime: boolean;
+  @IsOptional()
+  @IsBoolean()
+  related: boolean;
+  /** 1 帖子
+      2 案件 */
+  @IsOptional()
+  @IsNumber()
+  type: number;
 }
