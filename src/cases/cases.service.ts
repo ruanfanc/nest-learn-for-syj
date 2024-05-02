@@ -78,10 +78,12 @@ export class CasesService {
           buttons.push(2);
 
           // ======================= 放弃受理 ===========================
-          const team = await this.teamRepository.findOne({
-            where: { id: session.userInfo.groupId },
-            select: ['admins'],
-          });
+          const team = session.userInfo.groupId
+            ? await this.teamRepository.findOne({
+                where: { id: session.userInfo.groupId },
+                select: ['admins'],
+              })
+            : null;
 
           const isTeamAdmin = !!team?.admins?.includes(session.userInfo.id);
 
