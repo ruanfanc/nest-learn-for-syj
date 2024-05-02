@@ -88,10 +88,7 @@ export class CasesService {
               buttons.push(4);
             }
           }
-          if (
-            caseFinded.status === CASE_STATUS.WAITTING &&
-            session.userInfo.groupId
-          ) {
+          if (caseFinded.status === CASE_STATUS.WAITTING && isTeamAdmin) {
             buttons.push(6);
           }
         }
@@ -282,7 +279,7 @@ export class CasesService {
         .update(Case)
         .set({
           pendingRelateGroup: Array.from(
-            new Set([...caseById.pendingRelateGroup, groupId]),
+            new Set([...(caseById.pendingRelateGroup || []), groupId]),
           ),
         })
         .where('id=:id', { id: caseId })
