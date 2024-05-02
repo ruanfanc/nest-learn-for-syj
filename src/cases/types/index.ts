@@ -26,7 +26,7 @@ export const enum CASE_STATUS {
   WAIT_FOR_AUDIT = 5,
   // 帖子审核通过
   POST_AUDITED = 6,
-  POST_NOT_AUDITED = 7,
+  NOT_AUDITED = 7,
   DELETED = 8,
 }
 

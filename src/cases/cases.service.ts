@@ -63,40 +63,51 @@ export class CasesService {
     const getButtons = async () => {
       const buttons: CASES_BUTTONS_MAP_Value = [];
 
-      if (caseFinded.userId === session.userInfo.id) {
-        buttons.push(1);
-        buttons.push(5);
-        // ============= 重新委托团队 ==================
-        if (caseFinded.status === CASE_STATUS.PROCESSING) {
-          buttons.push(3);
-        }
-      } else {
-        // ============== 详谈 ===================
-        buttons.push(2);
+      if (caseFinded.type === 2) {
+        if (caseFinded.userId === session.userInfo.id) {
+          buttons.push(1);
+          buttons.push(5);
+          // ============= 重新委托团队 ==================
+          if (caseFinded.status === CASE_STATUS.PROCESSING) {
+            buttons.push(3);
+          }
+        } else {
+          // ============== 详谈 ===================
+          buttons.push(2);
 
-        // ======================= 放弃受理 ===========================
-        const team = await this.teamRepository.findOne({
-          where: { id: session.userInfo.groupId },
-          select: ['admins'],
-        });
+          // ======================= 放弃受理 ===========================
+          const team = await this.teamRepository.findOne({
+            where: { id: session.userInfo.groupId },
+            select: ['admins'],
+          });
 
-        const isTeamAdmin = !!team?.admins?.includes(session.userInfo.id);
+          const isTeamAdmin = !!team?.admins?.includes(session.userInfo.id);
 
-        if (session.userInfo.groupId === caseFinded.relateGroup) {
-          if (isTeamAdmin) {
-            buttons.push(4);
+          if (session.userInfo.groupId === caseFinded.relateGroup) {
+            if (isTeamAdmin) {
+              buttons.push(4);
+            }
+          }
+          if (
+            caseFinded.status === CASE_STATUS.WAITTING &&
+            session.userInfo.groupId
+          ) {
+            buttons.push(6);
           }
         }
-        if (
-          caseFinded.status === CASE_STATUS.WAITTING &&
-          session.userInfo.groupId
-        ) {
-          buttons.push(6);
-        }
-      }
 
-      if (session.userInfo.identity.includes(USER_IDENTITY.MANAGER)) {
-        buttons.push(7);
+        if (session.userInfo.identity.includes(USER_IDENTITY.MANAGER)) {
+          buttons.push(7);
+        }
+      } else {
+        if (caseFinded.userId === session.userInfo.id) {
+          buttons.push(1);
+          buttons.push(5);
+        }
+
+        if (session.userInfo.identity.includes(USER_IDENTITY.MANAGER)) {
+          buttons.push(7);
+        }
       }
       return buttons;
     };
@@ -145,16 +156,28 @@ export class CasesService {
     if (!caseById) {
       this.noCaseError(id);
     }
+    const getStatus = () => {
+      if (caseById.type === 1) {
+        if (isPass) {
+          return CASE_STATUS.POST_AUDITED;
+        } else {
+          return CASE_STATUS.NOT_AUDITED;
+        }
+      } else {
+        if (isPass) {
+          return CASE_STATUS.WAITTING;
+        } else {
+          return CASE_STATUS.NOT_AUDITED;
+        }
+      }
+    };
+
     await this.caseRepository
       .createQueryBuilder()
       .update(Case)
       .set({
         auditComment,
-        status: isPass
-          ? CASE_STATUS.WAITTING
-          : caseById.type
-          ? CASE_STATUS.WAIT_FOR_AUDIT
-          : CASE_STATUS.POST_AUDITED,
+        status: getStatus(),
       })
       .where('id=:id', { id })
       .execute();
