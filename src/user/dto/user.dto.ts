@@ -16,7 +16,7 @@ export class InitUserDto {
   @IsNumberArray()
   identity: any;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   identityID: string;
 

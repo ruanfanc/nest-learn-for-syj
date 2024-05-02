@@ -44,7 +44,9 @@ export class CasesService {
         ..._editCaseDto,
         userId: session.openid,
         avatarUrl: session.avatarUrl,
-        status: CASE_STATUS.WAIT_FOR_AUDIT,
+        status: _editCaseDto.isSubmit
+          ? CASE_STATUS.WAIT_FOR_AUDIT
+          : CASE_STATUS.DRAFT,
         type: isCase ? 2 : 1,
       });
     }

@@ -80,7 +80,8 @@ export class UserService {
       }
 
       if (user) {
-        return user;
+        session.userInfo = user;
+        return { ...user };
       }
 
       throw new HttpException(
