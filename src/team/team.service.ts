@@ -45,12 +45,19 @@ export class TeamService {
     return { success: true };
   }
 
-  async list() {
-    const teams = await this.userRepository
-      .createQueryBuilder('user')
-      .select('user.id')
+  async list(id: string) {
+    if (!id) {
+      return [];
+    }
+    console.log('decodeURIComponent(id): ', decodeURIComponent(id));
+    const teams = await this.teamRepository
+      .createQueryBuilder('team')
+      .where('team.id LIKE :query', {
+        query: `%${decodeURIComponent(id)}%`,
+      })
       .getRawMany();
-    const ids = teams.map((user) => user.id);
+
+    const ids = teams.map((team) => team.team_id);
     return ids;
   }
 

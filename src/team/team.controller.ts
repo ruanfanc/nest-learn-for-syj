@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Session, Get, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Session,
+  Get,
+  Param,
+  Query,
+} from '@nestjs/common';
 import { TeamService } from './team.service';
 import { JoinTeam, Members, AddManager, ApplyTeam } from './dto/team.dto';
 
@@ -17,8 +25,8 @@ export class TeamController {
   }
 
   @Get('/list')
-  list() {
-    return this.teamService.list();
+  list(@Query('id') id: string, @Session() session) {
+    return this.teamService.list(id);
   }
 
   @Get('/members')
