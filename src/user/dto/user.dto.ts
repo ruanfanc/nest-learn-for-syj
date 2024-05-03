@@ -5,10 +5,12 @@ export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
   code: string;
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  nickName: string;
-  avatarUrl: string;
+  nickName?: string;
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
 }
 
 export class InitUserDto {

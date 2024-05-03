@@ -30,32 +30,58 @@ export class UserService {
     );
     if (!data.data.errcode) {
       const { openid } = data.data;
+      // ===== must update nickname and avatarurl ======
+      if (nickName && avatarUrl) {
+        const count = await this.userRepository
+          .createQueryBuilder('user')
+          .where('user.nickName = :nickName', { nickName })
+          .getCount();
 
-      session.openid = openid;
-      session.authenticated = true;
-      session.nickName = nickName;
-      session.avatarUrl = avatarUrl;
+        if (count !== 0) {
+          throw new HttpException(
+            {
+              errorno: 12,
+              errormsg: '名字重复',
+              data: {
+                success: false,
+              },
+            },
+            HttpStatus.OK,
+          );
+        }
 
-      const user = await this.userRepository.findOne({
-        where: { id: openid },
-      });
+        session.openid = openid;
+        session.authenticated = true;
+        session.nickName = nickName;
+        session.avatarUrl = avatarUrl;
 
-      if (user) {
-        session.userInfo = user;
-        return { ...user };
+        await this.userRepository.save({
+          id: openid,
+          nickName: nickName,
+          avatarUrl: avatarUrl,
+        });
+        const userInfo = {
+          id: openid,
+          nickName,
+          avatarUrl,
+        };
+        session.userInfo = userInfo;
+        return userInfo;
+      } else {
+        //  =============== just return user info ===============
+        const user = await this.userRepository.findOne({
+          where: { id: openid },
+        });
+
+        if (user) {
+          session.openid = openid;
+          session.authenticated = true;
+          session.nickName = user.nickName;
+          session.avatarUrl = user.avatarUrl;
+          session.userInfo = user;
+          return { ...user };
+        }
       }
-      await this.userRepository.save({
-        id: openid,
-        nickName: nickName,
-        avatarUrl: avatarUrl,
-      });
-      const userInfo = {
-        id: openid,
-        nickName,
-        avatarUrl,
-      };
-      session.userInfo = userInfo;
-      return userInfo;
     } else {
       return data.data;
     }
