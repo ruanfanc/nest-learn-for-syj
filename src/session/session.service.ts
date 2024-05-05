@@ -24,13 +24,13 @@ export class SessionService {
   deleteSession(id: string): void {
     this.sessions.delete(id);
   }
-  // 保存chatId
-  saveChatId(userName: string, chatId: string): void {
-    const session = this.sessions.get(userName)!;
-    this.sessions.set(userName, { ...session, chatId });
-  }
+  // // 保存chatId
+  // saveChatId(userName: string, chatId: string): void {
+  //   const session = this.sessions.get(userName)!;
+  //   this.sessions.set(userName, { ...session, chatId });
+  // }
   // 返回chatId
-  findChatId(userName: string): string | undefined {
-    return this.sessions.get(userName)?.chatId;
-  }
+  // findChatId(userName: string): string | undefined {
+  //   return this.sessions.get(userName)?.chatId;
+  // }
 }
