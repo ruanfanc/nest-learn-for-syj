@@ -28,73 +28,66 @@ export class UserService {
     const data = await axios.get(
       `https://api.weixin.qq.com/sns/jscode2session?appid=wx559e4273b8badf2a&secret=7b8954140d68ecf74f21f53b058138e6&grant_type=authorization_code&js_code=${code}`,
     );
-    if (!data.data.errcode) {
-      const { openid } = data.data;
-      // ===== must update nickname and avatarurl ======
-      if (nickName && avatarUrl) {
-        const count = await this.userRepository
-          .createQueryBuilder('user')
-          .where('user.nickName = :nickName', { nickName })
-          .getCount();
 
-        if (count !== 0) {
-          throw new HttpException(
-            {
-              errorno: 12,
-              errormsg: '名字重复',
-              data: {
-                success: false,
-              },
+    if (data.data.errcode) return data.data;
+
+    const { openid } = data.data;
+
+    if (nickName && avatarUrl) {
+      const count = await this.userRepository
+        .createQueryBuilder('user')
+        .where('user.nickName = :nickName', { nickName })
+        .getCount();
+
+      if (count !== 0) {
+        throw new HttpException(
+          {
+            errorno: 12,
+            errormsg: '名字重复',
+            data: {
+              success: false,
             },
-            HttpStatus.OK,
-          );
-        }
+          },
+          HttpStatus.OK,
+        );
+      }
 
+      session.openid = openid;
+      session.authenticated = true;
+      session.nickName = nickName;
+      session.avatarUrl = avatarUrl;
+
+      await this.userRepository.save({
+        id: openid,
+        nickName: nickName,
+        avatarUrl: avatarUrl,
+      });
+      const userInfo = {
+        id: openid,
+        nickName,
+        avatarUrl,
+      };
+      session.userInfo = userInfo;
+      return userInfo;
+    } else {
+      //  =============== just return user info ===============
+      const user = await this.userRepository.findOne({
+        where: { id: openid },
+      });
+
+      if (user) {
         session.openid = openid;
         session.authenticated = true;
-        session.nickName = nickName;
-        session.avatarUrl = avatarUrl;
-
-        await this.userRepository.save({
-          id: openid,
-          nickName: nickName,
-          avatarUrl: avatarUrl,
-        });
-        const userInfo = {
-          id: openid,
-          nickName,
-          avatarUrl,
-        };
-        session.userInfo = userInfo;
-        return userInfo;
-      } else {
-        //  =============== just return user info ===============
-        const user = await this.userRepository.findOne({
-          where: { id: openid },
-        });
-
-        if (user) {
-          session.openid = openid;
-          session.authenticated = true;
-          session.nickName = user.nickName;
-          session.avatarUrl = user.avatarUrl;
-          session.userInfo = user;
-          return { ...user };
-        }
+        session.nickName = user.nickName;
+        session.avatarUrl = user.avatarUrl;
+        session.userInfo = user;
+        return { ...user };
       }
-    } else {
-      return data.data;
     }
   }
   async init(InitUse: InitUserDto, session) {
     try {
-      await this.userRepository
-        .createQueryBuilder()
-        .update(User)
-        .set(InitUse)
-        .where('id=:id', { id: session.openid })
-        .execute();
-
+      await this.userRepository;
       const user = await this.userRepository.findOne({
         where: { id: session.openid },
       });

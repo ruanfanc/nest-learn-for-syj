@@ -5,6 +5,8 @@ import { UserModule } from './user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CasesModule } from './cases/cases.module';
 import { TeamModule } from './team/team.module';
+import { ChatModule } from './chat/chat.module';
+import { SessionModule } from './session/session.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { TeamModule } from './team/team.module';
     }),
     CasesModule,
     TeamModule,
+    ChatModule,
+    SessionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { JsonContains, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { EditCaseDto } from './dto/create-case.dto';
 import {
   AuditCaseDto,
