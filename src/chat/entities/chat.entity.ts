@@ -1,18 +1,25 @@
-import { Column, CreateDateColumn, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
-enum chatType {
+export enum ChatType {
   NORMAL = 1,
   TEAM = 2,
   CASE = 3,
   APPROVECASE = 4,
+  GROUP = 5,
 }
 
-export class Chat {
-  @PrimaryGeneratedColumn({ type: 'int', name: 'msgId' })
-  msgId: number;
+@Entity('message', { schema: 'younglaw' })
+export class Message {
+  @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
+  id: number;
 
-  @Column('text', { name: 'msg' })
-  msg: string;
+  @Column('text', { name: 'content' })
+  content: string;
 
   @Column('varchar', { name: 'from' })
   from: string;
@@ -20,12 +27,47 @@ export class Chat {
   @Column('varchar', { name: 'to' })
   to: string;
 
+  @Column('json', { name: 'chatObjsReaded', nullable: true })
+  chatObjsReaded: string[];
+
   @CreateDateColumn({ type: 'timestamp', name: 'createTime' })
   createTime: string;
+}
+
+@Entity('chatRoom', { schema: 'younglaw' })
+export class ChatRoom {
+  @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
+  id: number;
+
+  @Column('varchar', { name: 'chatRoomName' })
+  chatRoomName: string;
+
+  @Column('json', { name: 'chatObjIds', nullable: true })
+  chatObjIds: string[];
+
+  @Column('json', { name: 'messagesIds', nullable: true })
+  messagesIds: number[];
 
   @Column('int', { name: 'type', default: 1 })
-  type: chatType;
+  type: ChatType;
 
-  @Column('varchar', { name: 'caseId', nullable: true })
-  caseId: string;
+  @Column('int', { name: 'caseId', nullable: true })
+  caseId: number;
+
+  @Column('json', { name: 'joinTeamApplyInfo', nullable: true })
+  joinTeamApplyInfo?: {
+    groupId: string;
+    userId: number;
+  };
+
+  @Column('json', { name: 'teamHanldeCaseInfo', nullable: true })
+  teamHanldeCaseInfo?: {
+    groupId: string;
+    caseId: number;
+  };
+
+  @Column('json', { name: 'publicAgreeHandleInfo', nullable: true })
+  publicAgreeHandleInfo?: {
+    caseId: number;
+  };
 }
