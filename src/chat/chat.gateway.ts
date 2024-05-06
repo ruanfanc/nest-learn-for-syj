@@ -18,6 +18,8 @@ import { Repository } from 'typeorm';
 import { SessionService } from 'src/session/session.service';
 import { ChatRoom, ChatType, Message } from './entities/chat.entity';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { User } from 'src/user/entities/user.entity';
+import { joinStringSet } from 'src/common/utils';
 
 @WebSocketGateway({
   namespace: 'younglaw',
@@ -29,6 +31,7 @@ export class ChatGateway {
 
   @InjectRepository(Message) private messageRepository: Repository<Message>;
   @InjectRepository(ChatRoom) private chatRoomRepository: Repository<ChatRoom>;
+  @InjectRepository(User) private userRepository: Repository<User>;
 
   @WebSocketServer()
   server: Server;
@@ -37,11 +40,19 @@ export class ChatGateway {
     const query = client.handshake.query;
     client.data = { openid: query.id };
     this.sessionService.saveSession(query.id as string, client.id);
+    this.newMessagesPreviewList(client);
     return { success: true };
   }
 
   handleDisconnect(client: Socket) {
     this.sessionService.deleteSession(client.data.openid);
+  }
+
+  emitClientSocket(userId: string) {
+    const socketIdObj = this.sessionService.sessions.get(userId);
+    if (socketIdObj) {
+      return this.server.to(socketIdObj.id);
+    }
   }
 
   // @SubscribeMessage('changeChat')
@@ -69,27 +80,23 @@ export class ChatGateway {
         to:
           chatRoomFinded.type === ChatType.GROUP
             ? `@${chatRoomId}`
-            : chatRoomFinded.chatObjIds.filter(
-                (item) => item !== client.data.openid,
-              )[0],
+            : chatRoomFinded.chatObjIds
+                .split(',')
+                .filter((item) => item !== client.data.openid)[0],
+        chatRoomId,
       });
 
-      this.chatRoomRepository
+      await this.chatRoomRepository
         .createQueryBuilder()
         .update(ChatRoom)
         .set({
-          messagesIds: [...(chatRoomFinded.messagesIds || []), newMessage.id],
+          messagesIds: joinStringSet(chatRoomFinded.messagesIds, newMessage.id),
         })
         .where('id=:id', { id: chatRoomId })
         .execute();
 
-      chatRoomFinded.chatObjIds.forEach((item) => {
-        const socketIdObj = this.sessionService.sessions.get(item);
-        if (socketIdObj) {
-          this.server
-            .to(socketIdObj.id)
-            .emit('room-message-receive', newMessage);
-        }
+      chatRoomFinded.chatObjIds.split(',').forEach((item) => {
+        this.emitClientSocket(item)?.emit('room-message-receive', newMessage);
       });
     }
   }
@@ -109,7 +116,7 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
   ) {
     const chatRoom = await this.chatRoomRepository.save({
-      chatObjIds,
+      chatObjIds: chatObjIds.join(','),
       caseId,
       chatRoomName: chatRoomName || chatObjIds.join('，'),
       type,
@@ -118,6 +125,15 @@ export class ChatGateway {
       publicAgreeHandleInfo,
     });
 
+    await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        chatGroups: () => `CONCAT(chatGroups, ',', '${chatRoom.id}')`,
+      })
+      .whereInIds(chatObjIds)
+      .execute();
+
     return {
       chatRoomId: chatRoom.id,
     };
@@ -125,21 +141,20 @@ export class ChatGateway {
 
   @SubscribeMessage('detail')
   async detail(
-    @MessageBody() { chatRoomId, pageNo, pageSize }: GetChatDetailDTO,
+    @MessageBody() { chatRoomId }: GetChatDetailDTO,
     @ConnectedSocket() client: Socket,
   ) {
     const chatRoomFinded = await this.chatRoomRepository.findOne({
       where: { id: chatRoomId },
     });
 
-    const skip = (pageNo - 1) * pageSize;
-
     const [data, total] = await this.messageRepository
-      .createQueryBuilder()
-      .whereInIds(chatRoomFinded.messagesIds)
+      .createQueryBuilder('message')
+      .whereInIds(chatRoomFinded.messagesIds.split(','))
+      .andWhere('NOT FIND_IN_SET(:value, message.chatObjsReaded)', {
+        id: client.data.openid,
+      })
       .orderBy('case.createTime', 'DESC')
-      .skip(skip)
-      .take(pageSize)
       .getManyAndCount();
 
     return {
@@ -150,52 +165,52 @@ export class ChatGateway {
     };
   }
 
-  @SubscribeMessage('previewList')
-  async previewList(
-    @MessageBody() { chatRoomId, pageNo, pageSize }: GetChatDetailDTO,
-    @ConnectedSocket() client: Socket,
-  ) {
-    const chatGroupRoomFinded = await this.chatRoomRepository
-      .createQueryBuilder('chatRoom')
-      .where('chatRoom.type=:type', { type: ChatType.GROUP })
-      .andWhere('JSON_CONTAINS(chatRoom.chatObjIds, :value)', {
-        value: client.data.openid,
-      })
-      .getMany();
+  async newMessagesPreviewList(client: Socket) {
+    const user = await this.userRepository.findOne({
+      where: { id: client.data.openid },
+      select: ['chatGroups'],
+    });
 
-    const skip = (pageNo - 1) * pageSize;
+    if (!user.chatGroups) {
+      return {
+        total: 0,
+        chats: [],
+      };
+    }
 
     const [data, total] = await this.messageRepository
       .createQueryBuilder('message')
-      .where('message.to=:id OR message.to IN (:...chatRoomIds)', {
-        id: client.data.openid,
-        chatRoomIds: chatGroupRoomFinded.map((item) => `@${item.id}`),
+      .where('FIND_IN_SET(message.chatRoomId, :chatRoomIds)', {
+        chatRoomIds: user.chatGroups,
       })
-      .where('NOT JSON_CONTAINS(chatRoom.chatObjsReaded, :value)', {
+      .andWhere('NOT FIND_IN_SET(:value, message.chatObjsReaded)', {
         id: client.data.openid,
       })
       .orderBy('case.createTime', 'DESC')
-      .skip(skip)
-      .take(pageSize)
       .getManyAndCount();
 
-    const chatMap = new Map<string, Message[]>();
+    const chatMap = new Map<number, Message[]>();
     const chatRoomMap = new Map<number, ChatRoom>();
 
-    chatGroupRoomFinded.forEach((item) => {
+    data.forEach((item) => {
+      const chatMsgs = chatMap.get(item.chatRoomId) || [];
+
+      chatMap.set(item.chatRoomId, [...chatMsgs, item]);
+    });
+
+    (
+      await this.chatRoomRepository
+        .createQueryBuilder()
+        .whereInIds(chatMap.keys())
+        .getMany()
+    ).forEach((item) => {
       chatRoomMap.set(item.id, item);
     });
 
-    data.forEach((item) => {
-      const chatMsgs = chatMap.get(item.to) || [];
-
-      chatMap.set(item.to, [...chatMsgs, item]);
-    });
-
-    return {
+    this.emitClientSocket(client.data.openid)?.emit('newMessagesPreviewList', {
       total,
       chats: Array.from(chatMap.entries()).map(([chatId, messages]) => {
-        const chatRoom = chatRoomMap.get(Number(chatId.slice(1)));
+        const chatRoom = chatRoomMap.get(chatId);
 
         return {
           ...chatRoom,
@@ -204,7 +219,7 @@ export class ChatGateway {
           meesageTime: messages?.[0].createTime,
         };
       }),
-    };
+    });
   }
 
   @SubscribeMessage('read')
@@ -212,43 +227,15 @@ export class ChatGateway {
     @MessageBody() { messageIds }: { messageIds: string[] },
     @ConnectedSocket() client: Socket,
   ) {
-    const messsagesFinded = await this.messageRepository
+    await this.messageRepository
       .createQueryBuilder()
+      .update(Message)
+      .set({
+        chatObjsReaded: () =>
+          `CONCAT(chatObjsReaded, ',', '${client.data.openid}')`,
+      })
       .whereInIds(messageIds)
-      .getMany();
-
-    await new Promise<void>((resolve) => {
-      messsagesFinded.forEach((element, index) => {
-        this.messageRepository
-          .createQueryBuilder()
-          .update(Message)
-          .set({
-            chatObjsReaded: [
-              ...(element.chatObjsReaded || []),
-              client.data.openid,
-            ],
-          })
-          .where('id=:id', { id: element.id })
-          .execute()
-          .catch((err) => {
-            throw new HttpException(
-              {
-                errorno: 14,
-                errormsg: JSON.stringify(err),
-                data: {
-                  success: false,
-                },
-              },
-              HttpStatus.OK,
-            );
-          })
-          .finally(() => {
-            if (index === messsagesFinded.length) {
-              resolve();
-            }
-          });
-      });
-    });
+      .execute();
 
     return {
       success: true,

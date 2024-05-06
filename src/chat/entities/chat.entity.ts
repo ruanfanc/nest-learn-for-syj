@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  PrimaryColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -27,8 +28,14 @@ export class Message {
   @Column('varchar', { name: 'to' })
   to: string;
 
-  @Column('json', { name: 'chatObjsReaded', nullable: true })
-  chatObjsReaded: string[];
+  @Column('text', { name: 'chatObjsReaded', nullable: true })
+  chatObjsReaded: string;
+
+  @Column('boolean', { name: 'isReaded', nullable: true })
+  isReaded: boolean;
+
+  @Column('int', { name: 'chatRoomId' })
+  chatRoomId: number;
 
   @CreateDateColumn({ type: 'timestamp', name: 'createTime' })
   createTime: string;
@@ -42,11 +49,11 @@ export class ChatRoom {
   @Column('varchar', { name: 'chatRoomName' })
   chatRoomName: string;
 
-  @Column('json', { name: 'chatObjIds', nullable: true })
-  chatObjIds: string[];
+  @Column('text', { name: 'chatObjIds', nullable: true })
+  chatObjIds: string;
 
-  @Column('json', { name: 'messagesIds', nullable: true })
-  messagesIds: number[];
+  @Column('text', { name: 'messagesIds', nullable: true })
+  messagesIds: string;
 
   @Column('int', { name: 'type', default: 1 })
   type: ChatType;
@@ -71,3 +78,27 @@ export class ChatRoom {
     caseId: number;
   };
 }
+
+// @Entity('chatRoomMessageRelate', { schema: 'younglaw' })
+// export class ChatRoomMessageRelate {
+//   @PrimaryColumn({ type: 'int', name: 'roomId' })
+//   roomId: number;
+
+//   @PrimaryColumn({ type: 'int', name: 'messageId' })
+//   messageId: number;
+
+//   @ManyToOne(() => ChatRoom, chatRoom => chatRoom.chatRoomMessages)
+//   chatRoom: ChatRoom;
+
+//   @ManyToOne(() => Message, message => message.chatRoomMessages)
+//   message: Message;
+// }
+
+// @Entity('chatRoomUserRelate', { schema: 'younglaw' })
+// export class ChatRoomUserRelate {
+//   @PrimaryColumn({ type: 'int', name: 'roomId' })
+//   roomId: number;
+
+//   @PrimaryColumn({ type: 'varchar', name: 'userId' })
+//   userId: string;
+// }
