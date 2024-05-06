@@ -30,6 +30,9 @@ export class User {
 
   @Column('text', { name: 'confirmCode', nullable: true })
   confirmCode: string | null;
+
+  @Column('text', { name: 'chatGroups', nullable: true })
+  chatGroups: string | null;
 }
 
 export enum USER_IDENTITY {

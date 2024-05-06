@@ -85,9 +85,15 @@ export class UserService {
       }
     }
   }
-  async init(InitUse: InitUserDto, session) {
+  async init(initUse: InitUserDto, session) {
     try {
-      await this.userRepository;
+      await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set(initUse)
+        .where('id=:id', { id: session.openid })
+        .execute();
+
       const user = await this.userRepository.findOne({
         where: { id: session.openid },
       });
@@ -95,7 +101,7 @@ export class UserService {
       const identity = user.identity;
 
       if (identity.includes(USER_IDENTITY.TEACHER)) {
-        await this.teamService.createTeam(InitUse.groupId, session.openid);
+        await this.teamService.createTeam(initUse.groupId, session.openid);
       }
 
       if (user) {
