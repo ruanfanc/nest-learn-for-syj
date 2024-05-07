@@ -117,22 +117,41 @@ export class ChatGateway {
     }: CreateRoomDTO,
     @ConnectedSocket() client: Socket,
   ) {
-    const avartarUrls = (
-      await this.userRepository
-        .createQueryBuilder()
-        .whereInIds(chatObjIds)
-        .getMany()
-    ).map((item) => item.avatarUrl);
+    const chatRoomFinded = await this.chatRoomRepository
+      .createQueryBuilder('chatRoom')
+      .where('chatRoom.type=:type', { type: ChatType.NORMAL })
+      .andWhere(
+        'FIND_IN_SET(:id1, chatRoom.chatObjIds) AND FIND_IN_SET(:id2, chatRoom.chatObjIds)',
+        {
+          id1: chatObjIds[0],
+          id2: chatObjIds[1],
+        },
+      )
+      .getOne();
+
+    if (chatRoomFinded) {
+      return this.emitClientSocket(client.data.openid)?.emit('createRoom', {
+        chatRoomId: chatRoomFinded.id,
+      });
+    }
+
+    const users = await this.userRepository
+      .createQueryBuilder()
+      .whereInIds(chatObjIds)
+      .getMany();
+
+    console.log(users, 'users');
 
     const chatRoom = await this.chatRoomRepository.save({
       chatObjIds: chatObjIds.join(','),
       caseId,
-      chatRoomName: chatRoomName || chatObjIds.join('，'),
+      chatRoomName:
+        chatRoomName || users.map((item) => item.nickName).join('，'),
       type,
       teamHanldeCaseInfo,
       joinTeamApplyInfo,
       publicAgreeHandleInfo,
-      avartarUrls,
+      avartarUrls: users.map((item) => item.avatarUrl),
     });
 
     await this.userRepository
@@ -144,9 +163,9 @@ export class ChatGateway {
       .whereInIds(chatObjIds)
       .execute();
 
-    return {
+    return this.emitClientSocket(client.data.openid)?.emit('createRoom', {
       chatRoomId: chatRoom.id,
-    };
+    });
   }
 
   @SubscribeMessage('detail')
