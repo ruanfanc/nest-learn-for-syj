@@ -52,6 +52,9 @@ export class ChatRoom {
   @Column('text', { name: 'chatObjIds', nullable: true })
   chatObjIds: string;
 
+  @Column('json', { name: 'chatObjAvatarUrl', nullable: true })
+  chatObjAvatarUrl: string[];
+
   @Column('text', { name: 'messagesIds', nullable: true })
   messagesIds: string;
 

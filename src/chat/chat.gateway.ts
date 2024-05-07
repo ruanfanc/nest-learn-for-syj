@@ -24,7 +24,7 @@ import { joinStringSet } from 'src/common/utils';
 @WebSocketGateway({
   namespace: 'younglaw',
   cors: { origin: '*' },
-  transports: ['websocket'],
+  transports: ['polling', 'websocket', 'webtransport'],
 })
 export class ChatGateway {
   constructor(private sessionService: SessionService) {}
@@ -41,6 +41,8 @@ export class ChatGateway {
     client.data = { openid: query.id };
     this.sessionService.saveSession(query.id as string, client.id);
     this.newMessagesPreviewList(client);
+    console.log(`============== connected ${query.id} =========== `);
+
     return { success: true };
   }
 
@@ -115,6 +117,13 @@ export class ChatGateway {
     }: CreateRoomDTO,
     @ConnectedSocket() client: Socket,
   ) {
+    const avartarUrls = (
+      await this.userRepository
+        .createQueryBuilder()
+        .whereInIds(chatObjIds)
+        .getMany()
+    ).map((item) => item.avatarUrl);
+
     const chatRoom = await this.chatRoomRepository.save({
       chatObjIds: chatObjIds.join(','),
       caseId,
@@ -123,6 +132,7 @@ export class ChatGateway {
       teamHanldeCaseInfo,
       joinTeamApplyInfo,
       publicAgreeHandleInfo,
+      avartarUrls,
     });
 
     await this.userRepository
@@ -157,12 +167,12 @@ export class ChatGateway {
       .orderBy('case.createTime', 'DESC')
       .getManyAndCount();
 
-    return {
+    this.emitClientSocket(client.data.openid)?.emit('detail', {
       total,
       caseId: chatRoomFinded.caseId,
       chatRoomName: chatRoomFinded.chatRoomName,
       messages: data,
-    };
+    });
   }
 
   async newMessagesPreviewList(client: Socket) {
@@ -171,17 +181,20 @@ export class ChatGateway {
       select: ['chatGroups'],
     });
 
-    if (!user.chatGroups) {
-      return {
-        total: 0,
-        chats: [],
-      };
+    if (!user?.chatGroups) {
+      return this.emitClientSocket(client.data.openid)?.emit(
+        'newMessagesPreviewList',
+        {
+          total: 0,
+          chats: [],
+        },
+      );
     }
 
     const [data, total] = await this.messageRepository
       .createQueryBuilder('message')
       .where('FIND_IN_SET(message.chatRoomId, :chatRoomIds)', {
-        chatRoomIds: user.chatGroups,
+        chatRoomIds: user?.chatGroups,
       })
       .andWhere('NOT FIND_IN_SET(:value, message.chatObjsReaded)', {
         id: client.data.openid,

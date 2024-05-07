@@ -6,6 +6,7 @@ import {
   isString,
   IsString,
 } from 'class-validator';
+import { IsStringArray } from 'src/common';
 import { ChatType } from '../entities/chat.entity';
 
 export class CreateChatDto {}
@@ -30,7 +31,7 @@ export class GetChatDetailDTO {
 
 export class CreateRoomDTO {
   @IsNotEmpty()
-  @IsNumber()
+  @IsStringArray()
   chatObjIds: string[];
   @IsOptional()
   @IsString()
