@@ -6,6 +6,7 @@ import { Filter } from './common/filter';
 import { Response } from './common/response';
 import * as session from 'express-session';
 import { AuthGuard } from './common/guard';
+import sessionMemoryStore from './sessionStore';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,9 +20,10 @@ async function bootstrap() {
         httpOnly: false,
         sameSite: 'None',
       },
+      store: sessionMemoryStore,
     }),
   );
-  app.use(cookieParser());
+  app.use(cookieParser('akingYouthLaw'));
   app.useGlobalGuards(new AuthGuard());
   app.useGlobalInterceptors(new Response());
   app.useGlobalPipes(new ValidationPipe());

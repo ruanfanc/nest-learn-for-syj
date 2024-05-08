@@ -17,13 +17,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SessionService } from 'src/session/session.service';
 import { ChatRoom, ChatType, Message } from './entities/chat.entity';
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Session, UseGuards } from '@nestjs/common';
 import { User } from 'src/user/entities/user.entity';
 import { joinStringSet } from 'src/common/utils';
+import { AuthGuard } from 'src/common/guard';
+import sessionMemoryStore from 'src/sessionStore';
+const Cookie = require('express-session/session/cookie.js');
+
+const cookieSeriali = new Cookie();
 
 @WebSocketGateway({
   namespace: 'younglaw',
-  cors: { origin: '*' },
+  cors: { origin: 'localhost' },
   transports: ['polling', 'websocket', 'webtransport'],
 })
 export class ChatGateway {
@@ -36,14 +41,15 @@ export class ChatGateway {
   @WebSocketServer()
   server: Server;
 
-  handleConnection(client: Socket) {
+  @UseGuards(AuthGuard)
+  handleConnection(client: Socket, @Session() session) {
     const query = client.handshake.query;
-    client.data = { openid: query.id };
-    this.sessionService.saveSession(query.id as string, client.id);
-    this.newMessagesPreviewList(client);
-    console.log(`============== connected ${query.id} =========== `);
-
-    return { success: true };
+    if (sessionMemoryStore['sessions']?.[query.cookie]) {
+      this.sessionService.saveSession(query.id as string, client.id);
+    } else {
+      client.disconnect(true);
+      console.log('====== auth fail disconnect ======');
+    }
   }
 
   handleDisconnect(client: Socket) {
