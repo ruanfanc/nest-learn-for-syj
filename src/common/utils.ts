@@ -5,6 +5,9 @@ export function returnEmptyIfValueEmpty<K extends string, T>(key: K, value: T) {
   return {};
 }
 
-export function joinStringSet(orignSet: string, newItem: string | number) {
-  return orignSet ? `${orignSet},${newItem}` : `${newItem}`;
+export function joinStringSet(
+  originValueKey: string,
+  newItem: string | number,
+) {
+  return `CONCAT(IFNULL(${originValueKey}, ''), IF(${originValueKey} IS NULL, '', ','), '${newItem}')`;
 }

@@ -22,6 +22,7 @@ import { User } from 'src/user/entities/user.entity';
 import { joinStringSet } from 'src/common/utils';
 import { AuthGuard } from 'src/common/guard';
 import sessionMemoryStore from 'src/sessionStore';
+import { Case } from 'src/cases/entities/case.entity';
 const Cookie = require('express-session/session/cookie.js');
 
 const cookieSeriali = new Cookie();
@@ -37,6 +38,7 @@ export class ChatGateway {
   @InjectRepository(Message) private messageRepository: Repository<Message>;
   @InjectRepository(ChatRoom) private chatRoomRepository: Repository<ChatRoom>;
   @InjectRepository(User) private userRepository: Repository<User>;
+  @InjectRepository(Case) private casesRepository: Repository<Case>;
 
   @WebSocketServer()
   server: Server;
@@ -47,16 +49,24 @@ export class ChatGateway {
     if (sessionMemoryStore['sessions']?.[query.cookie]) {
       console.log(`====== auth connect ${query.id} ======`);
       client.data = { openid: query.id };
-      this.sessionService.saveSession(query.id as string, client.id);
+      this.sessionService.saveSession(query.id as string, {
+        sessionId: client.id,
+      });
 
       // =================== Heartbeat Detection ====================
-      let clientActive = true;
-
       const heartbeatInterval = setInterval(() => {
-        if (clientActive) {
-          clientActive = false;
+        const session = this.sessionService.findSession(query.id as string);
+
+        if (session && session.isActive) {
+          this.sessionService.saveSession(session.sessionId, {
+            ...session,
+            isActive: false,
+          });
           client.emit('heartDetect', () => {
-            clientActive = true;
+            this.sessionService.saveSession(session.sessionId, {
+              ...session,
+              isActive: true,
+            });
           });
         } else {
           client.disconnect();
@@ -72,13 +82,16 @@ export class ChatGateway {
   }
 
   handleDisconnect(client: Socket) {
+    clearInterval(
+      this.sessionService.findSession(client.data.openid).heartbeatInterval,
+    );
     this.sessionService.deleteSession(client.data.openid);
   }
 
   emitClientSocket(userId: string) {
     const socketIdObj = this.sessionService.sessions.get(userId);
-    if (socketIdObj) {
-      return this.server.to(socketIdObj.id);
+    if (socketIdObj && socketIdObj.isActive) {
+      return this.server.to(socketIdObj.sessionId);
     }
   }
 
@@ -100,10 +113,15 @@ export class ChatGateway {
       where: { id: chatRoomId },
     });
 
-    if (chatRoomFinded) {
+    const fromUser = await this.userRepository.findOne({
+      where: { id: client.data.openid },
+      select: ['id', 'avatarUrl', 'nickName'],
+    });
+
+    if (chatRoomFinded && fromUser) {
       const newMessage = await this.messageRepository.save({
         content,
-        from: client.data.openid,
+        from: fromUser.id,
         to:
           chatRoomFinded.type === ChatType.GROUP
             ? `@${chatRoomId}`
@@ -111,6 +129,8 @@ export class ChatGateway {
                 .split(',')
                 .filter((item) => item !== client.data.openid)[0],
         chatRoomId,
+        nickName: fromUser.nickName,
+        avatarUrl: fromUser.avatarUrl,
       });
 
       await this.chatRoomRepository
@@ -122,8 +142,11 @@ export class ChatGateway {
         .where('id=:id', { id: chatRoomId })
         .execute();
 
+      // 群发
       chatRoomFinded.chatObjIds.split(',').forEach((item) => {
-        this.emitClientSocket(item)?.emit('room-message-receive', newMessage);
+        this.emitClientSocket(item)?.emit('room-message-receive', {
+          [chatRoomId]: newMessage,
+        });
       });
     }
   }
@@ -165,13 +188,24 @@ export class ChatGateway {
       .whereInIds(chatObjIds)
       .getMany();
 
+    let caseDetail: Case;
+
+    if (caseId) {
+      caseDetail = await this.casesRepository.findOne({
+        where: { id: caseId },
+        select: ['title'],
+      });
+    }
+
     console.log(users, 'users');
 
     const chatRoom = await this.chatRoomRepository.save({
       chatObjIds: chatObjIds.join(','),
       caseId,
       chatRoomName:
-        chatRoomName || users.map((item) => item.nickName).join('，'),
+        chatRoomName ||
+        caseDetail.title ||
+        users.map((item) => item.nickName).join('，'),
       type,
       teamHanldeCaseInfo,
       joinTeamApplyInfo,
@@ -180,10 +214,10 @@ export class ChatGateway {
     } as ChatRoom);
 
     await this.userRepository
-      .createQueryBuilder()
+      .createQueryBuilder('user')
       .update(User)
       .set({
-        chatGroups: () => `CONCAT(chatGroups, ',', '${chatRoom.id}')`,
+        chatGroups: () => joinStringSet('user.chatGroups', chatRoom.id),
       })
       .whereInIds(chatObjIds)
       .execute();
@@ -204,14 +238,15 @@ export class ChatGateway {
 
     const [data, total] = await this.messageRepository
       .createQueryBuilder('message')
-      .whereInIds(chatRoomFinded.messagesIds.split(','))
+      .whereInIds(chatRoomFinded.messagesIds?.split(',') || [])
       .andWhere('NOT FIND_IN_SET(:value, message.chatObjsReaded)', {
-        id: client.data.openid,
+        value: client.data.openid,
       })
-      .orderBy('case.createTime', 'DESC')
+      .orderBy('message.createTime', 'DESC')
       .getManyAndCount();
 
     this.emitClientSocket(client.data.openid)?.emit('detail', {
+      ...chatRoomFinded,
       total,
       caseId: chatRoomFinded.caseId,
       chatRoomName: chatRoomFinded.chatRoomName,
@@ -243,7 +278,7 @@ export class ChatGateway {
       .andWhere('NOT FIND_IN_SET(:value, message.chatObjsReaded)', {
         id: client.data.openid,
       })
-      .orderBy('case.createTime', 'DESC')
+      .orderBy('message.createTime', 'DESC')
       .getManyAndCount();
 
     const chatMap = new Map<number, Message[]>();
@@ -285,11 +320,11 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
   ) {
     await this.messageRepository
-      .createQueryBuilder()
+      .createQueryBuilder('message')
       .update(Message)
       .set({
         chatObjsReaded: () =>
-          `CONCAT(chatObjsReaded, ',', '${client.data.openid}')`,
+          joinStringSet('message.chatObjsReaded', client.data.openid),
       })
       .whereInIds(messageIds)
       .execute();
@@ -297,6 +332,22 @@ export class ChatGateway {
     return {
       success: true,
     };
+  }
+
+  async getSimpleUserInfoSet(ids: string[]) {
+    const userMap = new Map<string, User>();
+
+    (
+      await this.userRepository
+        .createQueryBuilder('user')
+        .whereInIds(ids)
+        .select(['id', 'avatarUrl', 'nickName'])
+        .getMany()
+    ).forEach((element) => {
+      userMap.set(element.id, element);
+    });
+
+    return userMap;
   }
 
   notFoundRoom() {

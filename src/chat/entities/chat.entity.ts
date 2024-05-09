@@ -39,6 +39,12 @@ export class Message {
 
   @CreateDateColumn({ type: 'timestamp', name: 'createTime' })
   createTime: string;
+
+  @Column('varchar', { name: 'nickName', length: 45, nullable: true })
+  nickName: string;
+
+  @Column('text', { name: 'avatarUrl', nullable: true })
+  avatarUrl: string | null;
 }
 
 @Entity('chatRoom', { schema: 'younglaw' })

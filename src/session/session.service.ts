@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
 export interface session {
-  id: string;
+  sessionId: string;
   chatId?: string;
+  isActive: boolean;
+  heartbeatInterval?: NodeJS.Timeout;
 }
 
 @Injectable()
@@ -13,12 +15,23 @@ export class SessionService {
     this.sessions = new Map<string, session>();
   }
   // 返回socketid
-  findSession(id: string): string | undefined {
-    return this.sessions.get(id)?.id;
+  findSession(id: string): session | undefined {
+    return this.sessions.get(id);
   }
   // 保存socketid
-  saveSession(id: string, sessionId: string): void {
-    this.sessions.set(id, { id: sessionId });
+  saveSession(
+    id: string,
+    {
+      sessionId,
+      isActive = true,
+      heartbeatInterval,
+    }: {
+      sessionId: string;
+      isActive?: boolean;
+      heartbeatInterval?: NodeJS.Timeout;
+    },
+  ): void {
+    this.sessions.set(id, { sessionId, isActive, heartbeatInterval });
   }
   // 删除sessions
   deleteSession(id: string): void {
