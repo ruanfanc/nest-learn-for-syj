@@ -45,6 +45,8 @@ export class ChatGateway {
   handleConnection(client: Socket, @Session() session) {
     const query = client.handshake.query;
     if (sessionMemoryStore['sessions']?.[query.cookie]) {
+      console.log(`====== auth connect ${query.id} ======`);
+      client.data = { openid: query.id };
       this.sessionService.saveSession(query.id as string, client.id);
     } else {
       client.disconnect(true);
@@ -157,8 +159,8 @@ export class ChatGateway {
       teamHanldeCaseInfo,
       joinTeamApplyInfo,
       publicAgreeHandleInfo,
-      avartarUrls: users.map((item) => item.avatarUrl),
-    });
+      chatObjAvatarUrl: users.map((item) => item.avatarUrl),
+    } as ChatRoom);
 
     await this.userRepository
       .createQueryBuilder()
