@@ -48,6 +48,23 @@ export class ChatGateway {
       console.log(`====== auth connect ${query.id} ======`);
       client.data = { openid: query.id };
       this.sessionService.saveSession(query.id as string, client.id);
+
+      // =================== Heartbeat Detection ====================
+      let clientActive = true;
+
+      const heartbeatInterval = setInterval(() => {
+        if (clientActive) {
+          clientActive = false;
+          client.emit('heartDetect', () => {
+            clientActive = true;
+          });
+        } else {
+          client.disconnect();
+          this.sessionService.deleteSession(query.id as string);
+          clearInterval(heartbeatInterval);
+          console.log(`====== ${query.id} response to long; disconnect ======`);
+        }
+      }, 10000);
     } else {
       client.disconnect(true);
       console.log('====== auth fail disconnect ======');
