@@ -8,9 +8,9 @@ import {
 
 export enum ChatType {
   NORMAL = 1,
-  TEAM = 2,
-  CASE = 3,
-  APPROVECASE = 4,
+  JOIN_TEAM_APPLY = 2,
+  TEAM_HANLDE_CASE = 3,
+  PEOPLE_APPROVE_CASE = 4,
   GROUP = 5,
 }
 

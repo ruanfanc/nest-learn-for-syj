@@ -23,6 +23,7 @@ import { joinStringSet } from 'src/common/utils';
 import { AuthGuard } from 'src/common/guard';
 import sessionMemoryStore from 'src/sessionStore';
 import { Case } from 'src/cases/entities/case.entity';
+import * as dayjs from 'dayjs';
 const Cookie = require('express-session/session/cookie.js');
 
 const cookieSeriali = new Cookie();
@@ -134,10 +135,11 @@ export class ChatGateway {
       });
 
       await this.chatRoomRepository
-        .createQueryBuilder()
+        .createQueryBuilder('chatRoom')
         .update(ChatRoom)
         .set({
-          messagesIds: joinStringSet(chatRoomFinded.messagesIds, newMessage.id),
+          messagesIds: () =>
+            joinStringSet('chatRoom.messagesIds', newMessage.id),
         })
         .where('id=:id', { id: chatRoomId })
         .execute();
@@ -308,7 +310,7 @@ export class ChatGateway {
           ...chatRoom,
           unReadNum: messages.length,
           messagePreview: messages?.[0],
-          meesageTime: messages?.[0].createTime,
+          meesageTime: dayjs(messages?.[0].createTime).format('MM-DD HH:mm:ss'),
         };
       }),
     });
