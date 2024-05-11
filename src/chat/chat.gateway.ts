@@ -303,12 +303,27 @@ export class ChatGateway {
       chats: Array.from(chatMap.entries()).map(([chatId, messages]) => {
         const chatRoom = chatRoomMap.get(chatId);
 
-        return {
-          ...chatRoom,
-          unReadNum: messages.length,
-          messagePreview: messages?.[0],
-          meesageTime: dayjs(messages?.[0].createTime).format('MM-DD HH:mm:ss'),
-        };
+        if (
+          chatRoom.type === ChatType.NORMAL ||
+          chatRoom.type === ChatType.GROUP
+        ) {
+          return {
+            ...chatRoom,
+            unReadNum: messages.length,
+            messagePreview: messages?.[0],
+            meesageTime: dayjs(messages?.[0].createTime).format(
+              'MM-DD HH:mm:ss',
+            ),
+          };
+        } else {
+          return {
+            ...chatRoom,
+            unReadNum: 1,
+            messagePreview: chatRoom.chatRoomName,
+            chatRoomName: '提示',
+            meesageTime: '',
+          };
+        }
       }),
     });
   }
