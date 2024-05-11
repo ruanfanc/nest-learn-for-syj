@@ -277,12 +277,15 @@ export class ChatGateway {
       .where('FIND_IN_SET(message.chatRoomId, :chatRoomIds)', {
         chatRoomIds: user?.chatGroups,
       })
-      .andWhere('NOT FIND_IN_SET(:value, message.chatObjsReaded)', {
-        value: client.data.openid,
-      })
+      .andWhere(
+        'NOT FIND_IN_SET(:value, IFNULL(message.chatObjsReaded, ","))',
+        {
+          value: client.data.openid,
+        },
+      )
       .orderBy('message.createTime', 'DESC')
       .getManyAndCount();
-    console.log('[data, total]: ', [data, total]);
+
     const chatMap = new Map<number, Message[]>();
     const chatRoomMap = new Map<number, ChatRoom>();
 
@@ -295,7 +298,7 @@ export class ChatGateway {
     (
       await this.chatRoomRepository
         .createQueryBuilder()
-        .whereInIds(chatMap.keys())
+        .whereInIds(Array.from(chatMap.keys()))
         .getMany()
     ).forEach((item) => {
       chatRoomMap.set(item.id, item);
@@ -313,7 +316,7 @@ export class ChatGateway {
           return {
             ...chatRoom,
             unReadNum: messages.length,
-            messagePreview: messages?.[0],
+            messagePreview: messages?.[0]?.content || '',
             meesageTime: dayjs(messages?.[0].createTime).format(
               'MM-DD HH:mm:ss',
             ),

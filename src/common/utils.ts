@@ -9,5 +9,5 @@ export function joinStringSet(
   originValueKey: string,
   newItem: string | number,
 ) {
-  return `CONCAT(IFNULL(${originValueKey}, ''), IF(${originValueKey} IS NULL, '', ','), '${newItem}')`;
+  return `CONCAT(IFNULL(${originValueKey}, ''), '${newItem},')`;
 }
