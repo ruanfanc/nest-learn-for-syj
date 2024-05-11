@@ -5,9 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { Team } from './entities/team.entity';
 import { TeamApply } from './entities/teamApply.entity';
+import { ChatModule } from 'src/chat/chat.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Team, User, TeamApply])],
+  imports: [ChatModule, TypeOrmModule.forFeature([Team, User, TeamApply])],
   controllers: [TeamController],
   providers: [TeamService],
   exports: [TeamService],

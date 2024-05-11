@@ -6,9 +6,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { TeamApply } from './entities/teamApply.entity';
 import * as dayjs from 'dayjs';
+import { ChatService } from 'src/chat/chat.service';
+import { ChatType } from 'src/chat/entities/chat.entity';
 
 @Injectable()
 export class TeamService {
+  constructor(private chatService: ChatService) {}
   @InjectRepository(Team) private teamRepository: Repository<Team>;
   @InjectRepository(Team) private teamApplyRepository: Repository<TeamApply>;
   @InjectRepository(User) private userRepository: Repository<User>;
@@ -20,6 +23,16 @@ export class TeamService {
     });
     this.testTeamAdmin(team, session.openid);
     if (isPass) {
+      this.chatService.sendMessage({
+        from: session.openid,
+        to: userId,
+        type: ChatType.AGREE_JOIN_TEAM_APPLY,
+        agreeJoinTeamApplyInfo: {
+          groupId: groupId,
+          userId: userId,
+        },
+      });
+
       await this.userRepository
         .createQueryBuilder()
         .update(User)

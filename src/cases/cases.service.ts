@@ -15,9 +15,12 @@ import { CASES_BUTTONS_MAP_Value, CASE_STATUS } from './types';
 import { User, USER_IDENTITY } from 'src/user/entities/user.entity';
 import { Team } from 'src/team/entities/team.entity';
 import * as dayjs from 'dayjs';
+import { ChatService } from 'src/chat/chat.service';
+import { ChatType } from 'src/chat/entities/chat.entity';
 
 @Injectable()
 export class CasesService {
+  constructor(private chatService: ChatService) {}
   @InjectRepository(Case) private caseRepository: Repository<Case>;
   @InjectRepository(Team) private teamRepository: Repository<Team>;
 
@@ -271,6 +274,16 @@ export class CasesService {
     }
 
     if (isHandle) {
+      this.chatService.sendMessage({
+        from: session.userInfo.id,
+        to: caseById.userId,
+        type: ChatType.TEAM_HANLDE_CASE,
+        teamHanldeCaseInfo: {
+          groupId: groupId,
+          caseId: caseId,
+        },
+      });
+
       await this.caseRepository
         .createQueryBuilder()
         .update(Case)
@@ -328,6 +341,17 @@ export class CasesService {
     if (!caseById.pendingRelateGroup.includes(groupId)) {
       return this.groupHasGiveUp();
     }
+
+    team.admins.forEach((item) => {
+      this.chatService.sendMessage({
+        from: session.userInfo.id,
+        to: item,
+        type: ChatType.PEOPLE_APPROVE_CASE,
+        publicAgreeHandleInfo: {
+          caseId: caseId,
+        },
+      });
+    });
 
     await this.caseRepository
       .createQueryBuilder()
