@@ -19,7 +19,7 @@ import { SessionService } from 'src/session/session.service';
 import { ChatRoom, ChatType, Message } from './entities/chat.entity';
 import { HttpException, HttpStatus, Session, UseGuards } from '@nestjs/common';
 import { User } from 'src/user/entities/user.entity';
-import { joinStringSet } from 'src/common/utils';
+import { joinStringSet, replaceSqlEmptyStr } from 'src/common/utils';
 import { AuthGuard } from 'src/common/guard';
 import sessionMemoryStore from 'src/sessionStore';
 import { Case } from 'src/cases/entities/case.entity';
@@ -132,6 +132,7 @@ export class ChatGateway {
         chatRoomId,
         nickName: fromUser.nickName,
         avatarUrl: fromUser.avatarUrl,
+        chatObjsReaded: `${fromUser.id},`,
       });
 
       await this.chatRoomRepository
@@ -171,7 +172,11 @@ export class ChatGateway {
       .createQueryBuilder('chatRoom')
       .where('chatRoom.type=:type', { type: ChatType.NORMAL })
       .andWhere(
-        'FIND_IN_SET(:id1, chatRoom.chatObjIds) AND FIND_IN_SET(:id2, chatRoom.chatObjIds)',
+        `FIND_IN_SET(:id1, ${replaceSqlEmptyStr(
+          'chatRoom.chatObjIds',
+        )}) AND FIND_IN_SET(:id2, ${replaceSqlEmptyStr(
+          'chatRoom.chatObjIds',
+        )})`,
         {
           id1: chatObjIds[0],
           id2: chatObjIds[1],
@@ -241,10 +246,15 @@ export class ChatGateway {
     const [data, total] = await this.messageRepository
       .createQueryBuilder('message')
       .whereInIds(chatRoomFinded.messagesIds?.split(',') || [])
-      .andWhere('NOT FIND_IN_SET(:value, message.chatObjsReaded)', {
-        value: client.data.openid,
-      })
-      .orderBy('message.createTime', 'DESC')
+      .andWhere(
+        `NOT FIND_IN_SET(:value, ${replaceSqlEmptyStr(
+          'message.chatObjsReaded',
+        )})`,
+        {
+          value: client.data.openid,
+        },
+      )
+      .orderBy('message.createTime', 'ASC')
       .getManyAndCount();
 
     this.emitClientSocket(client.data.openid)?.emit('detail', {
@@ -274,11 +284,18 @@ export class ChatGateway {
 
     const [data, total] = await this.messageRepository
       .createQueryBuilder('message')
-      .where('FIND_IN_SET(message.chatRoomId, :chatRoomIds)', {
-        chatRoomIds: user?.chatGroups,
-      })
+      .where(
+        `FIND_IN_SET(message.chatRoomId, ${replaceSqlEmptyStr(
+          ':chatRoomIds',
+        )})`,
+        {
+          chatRoomIds: user?.chatGroups,
+        },
+      )
       .andWhere(
-        'NOT FIND_IN_SET(:value, IFNULL(message.chatObjsReaded, ","))',
+        `NOT FIND_IN_SET(:value, ${replaceSqlEmptyStr(
+          'message.chatObjsReaded',
+        )})`,
         {
           value: client.data.openid,
         },

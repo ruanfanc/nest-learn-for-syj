@@ -11,3 +11,7 @@ export function joinStringSet(
 ) {
   return `CONCAT(IFNULL(${originValueKey}, ''), '${newItem},')`;
 }
+
+export function replaceSqlEmptyStr(originValueKey: string) {
+  return `IFNULL(${originValueKey}, ",")`;
+}
