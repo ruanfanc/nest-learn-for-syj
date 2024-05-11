@@ -51,6 +51,9 @@ export class ChatGateway {
         sessionId: client.id,
       });
 
+      // =============== send preview list ===================
+      this.newMessagesPreviewList(client);
+
       // =================== Heartbeat Detection ====================
       const heartbeatInterval = setInterval(() => {
         const session = this.sessionService.findSession(query.id as string);
@@ -275,11 +278,11 @@ export class ChatGateway {
         chatRoomIds: user?.chatGroups,
       })
       .andWhere('NOT FIND_IN_SET(:value, message.chatObjsReaded)', {
-        id: client.data.openid,
+        value: client.data.openid,
       })
       .orderBy('message.createTime', 'DESC')
       .getManyAndCount();
-
+    console.log('[data, total]: ', [data, total]);
     const chatMap = new Map<number, Message[]>();
     const chatRoomMap = new Map<number, ChatRoom>();
 

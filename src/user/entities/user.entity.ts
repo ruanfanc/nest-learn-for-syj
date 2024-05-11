@@ -33,6 +33,9 @@ export class User {
 
   @Column('text', { name: 'chatGroups', nullable: true })
   chatGroups: string | null;
+
+  @Column('varchar', { name: 'teacherDegreeLevels', length: 45 })
+  teacherDegreeLevels: string;
 }
 
 export enum USER_IDENTITY {

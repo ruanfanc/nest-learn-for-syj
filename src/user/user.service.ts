@@ -21,39 +21,39 @@ export class UserService {
   async login({ code, nickName, avatarUrl }: CreateUserDto, session) {
     if (code === 'woshishdskashfasjk') {
       const user = await this.userRepository.findOne({
-        where: { nickName },
+        where: { id: code },
       });
 
       session.openid = 'woshishdskashfasjk';
       session.authenticated = true;
-      session.nickName = nickName;
-      session.avatarUrl = avatarUrl;
+      session.nickName = user.nickName;
+      session.avatarUrl = user.avatarUrl;
       session.userInfo = user;
       return user;
     }
 
     if (code === 'aaaaaaaaaaatestteacher') {
       const user = await this.userRepository.findOne({
-        where: { nickName },
+        where: { id: code },
       });
 
       session.openid = 'aaaaaaaaaaatestteacher';
       session.authenticated = true;
-      session.nickName = nickName;
-      session.avatarUrl = avatarUrl;
+      session.nickName = user.nickName;
+      session.avatarUrl = user.avatarUrl;
       session.userInfo = user;
       return user;
     }
 
     if (code === 'aaaaaaaaaaateststudent') {
       const user = await this.userRepository.findOne({
-        where: { nickName },
+        where: { id: code },
       });
 
       session.openid = 'aaaaaaaaaaateststudent';
       session.authenticated = true;
-      session.nickName = nickName;
-      session.avatarUrl = avatarUrl;
+      session.nickName = user.nickName;
+      session.avatarUrl = user.avatarUrl;
       session.userInfo = user;
       return user;
     }
@@ -118,66 +118,56 @@ export class UserService {
       }
     }
   }
-  async init(initUse: InitUserDto, session) {
-    try {
-      await this.userRepository
-        .createQueryBuilder()
-        .update(User)
-        .set({
-          ...initUse,
-          groupId: initUse.identity?.includes(USER_IDENTITY.TEACHER)
-            ? initUse.groupId
-            : null,
-        })
-        .where('id=:id', { id: session.openid })
-        .execute();
+  async init(initUse: InitUserDto, session: { userInfo: User }) {
+    await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        ...initUse,
+        groupId: initUse.identity?.includes(USER_IDENTITY.TEACHER)
+          ? initUse.groupId
+          : null,
+      })
+      .where('id=:id', { id: session.userInfo.id })
+      .execute();
 
-      const user = await this.userRepository.findOne({
-        where: { id: session.openid },
+    const user = await this.userRepository.findOne({
+      where: { id: session.userInfo.id },
+    });
+
+    const identity = user.identity;
+
+    if (identity.includes(USER_IDENTITY.TEACHER)) {
+      await this.teamService.createTeam(initUse.groupId, session.userInfo.id);
+    } else if (identity.includes(USER_IDENTITY.STUDENT)) {
+      const team = await this.teamRepository.findOne({
+        where: { id: initUse.groupId },
       });
-
-      const identity = user.identity;
-
-      if (identity.includes(USER_IDENTITY.TEACHER)) {
-        await this.teamService.createTeam(initUse.groupId, session.openid);
-      } else if (identity.includes(USER_IDENTITY.STUDENT)) {
-        const team = await this.teamRepository.findOne({
-          where: { id: initUse.groupId },
+      team.admins.forEach((item) => {
+        this.chatService.sendMessage({
+          from: user.id,
+          to: item,
+          type: ChatType.JOIN_TEAM_APPLY,
+          joinTeamApplyInfo: {
+            groupId: initUse.groupId,
+            userId: user.id,
+          },
         });
-        team.admins.forEach((item) => {
-          this.chatService.sendMessage({
-            from: user.id,
-            to: item,
-            type: ChatType.JOIN_TEAM_APPLY,
-            joinTeamApplyInfo: {
-              groupId: initUse.groupId,
-              userId: user.id,
-            },
-          });
-        });
-      }
-
-      if (user) {
-        session.userInfo = user;
-        return { ...user };
-      }
-
-      throw new HttpException(
-        {
-          errorno: 6,
-          errormsg: `未找到openid为${session.openid}的用户`,
-        },
-        HttpStatus.OK,
-      );
-    } catch (error) {
-      throw new HttpException(
-        {
-          errorno: 7,
-          errormsg: error,
-        },
-        HttpStatus.OK,
-      );
+      });
     }
+
+    if (user) {
+      session.userInfo = user;
+      return { ...user };
+    }
+
+    throw new HttpException(
+      {
+        errorno: 6,
+        errormsg: `未找到openid为${session.userInfo.id}的用户`,
+      },
+      HttpStatus.OK,
+    );
   }
 
   /** this api is only for internal module */
