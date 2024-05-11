@@ -24,9 +24,6 @@ import { AuthGuard } from 'src/common/guard';
 import sessionMemoryStore from 'src/sessionStore';
 import { Case } from 'src/cases/entities/case.entity';
 import * as dayjs from 'dayjs';
-const Cookie = require('express-session/session/cookie.js');
-
-const cookieSeriali = new Cookie();
 
 @WebSocketGateway({
   namespace: 'younglaw',

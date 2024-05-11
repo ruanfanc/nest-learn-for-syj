@@ -12,6 +12,7 @@ export enum ChatType {
   TEAM_HANLDE_CASE = 3,
   PEOPLE_APPROVE_CASE = 4,
   GROUP = 5,
+  AGREE_JOIN_TEAM_APPLY = 6,
 }
 
 @Entity('message', { schema: 'younglaw' })
