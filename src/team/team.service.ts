@@ -83,8 +83,18 @@ export class TeamService {
       where: { groupId: id },
       select: ['id', 'groupId', 'nickName', 'avatarUrl'],
     });
+
+    const team = await this.teamRepository.findOne({
+      where: { id },
+    });
+
     if (members.length > 0) {
-      return members;
+      return members.map((item) => {
+        return {
+          ...item,
+          isAdmin: team.admins?.includes(item.id),
+        };
+      });
     } else {
       throw new HttpException(
         {

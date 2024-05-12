@@ -127,6 +127,9 @@ export class UserService {
         groupId: initUse.identity?.includes(USER_IDENTITY.TEACHER)
           ? initUse.groupId
           : null,
+        identity: initUse.identity.filter(
+          (item) => item !== USER_IDENTITY.MANAGER,
+        ),
       })
       .where('id=:id', { id: session.userInfo.id })
       .execute();

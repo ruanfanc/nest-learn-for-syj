@@ -332,9 +332,9 @@ export class CasesService {
       return this.noCaseError(caseId);
     }
     const team = await this.teamRepository.findOne({
-      where: { id: session.userInfo.groupId },
+      where: { id: groupId },
     });
-    if (!team.admins?.find((item) => item === session.userInfo.id)) {
+    if (caseById.userId !== session.userInfo.id) {
       return this.noAuth();
     }
 
@@ -349,6 +349,7 @@ export class CasesService {
         type: ChatType.PEOPLE_APPROVE_CASE,
         publicAgreeHandleInfo: {
           caseId: caseId,
+          groupId: groupId,
         },
       });
     });

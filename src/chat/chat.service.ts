@@ -40,6 +40,7 @@ export class ChatService {
     };
     publicAgreeHandleInfo?: {
       caseId: number;
+      groupId: string;
     };
   }) {
     let user: User;

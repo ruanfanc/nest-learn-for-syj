@@ -30,8 +30,8 @@ export class TeamController {
   }
 
   @Get('/members')
-  members(@Param() members: Members) {
-    return this.teamService.members(members.id);
+  members(@Query('id') id: string) {
+    return this.teamService.members(id);
   }
 
   @Post('/addManager')
