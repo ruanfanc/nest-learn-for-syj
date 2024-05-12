@@ -71,6 +71,9 @@ export class ChatRoom {
   @Column('int', { name: 'caseId', nullable: true })
   caseId: number;
 
+  @Column('int', { name: 'isWaitingConfirmInfo', nullable: true })
+  isWaitingConfirmInfo: number;
+
   @Column('json', { name: 'joinTeamApplyInfo', nullable: true })
   joinTeamApplyInfo?: {
     groupId: string;

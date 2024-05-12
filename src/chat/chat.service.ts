@@ -69,7 +69,8 @@ export class ChatService {
           chatRoomName: `${user.nickName}申请加入您的团队`,
           type,
           joinTeamApplyInfo,
-          chatObjAvatarUrl: user.avatarUrl,
+          chatObjAvatarUrl: [user.avatarUrl],
+          isWaitingConfirmInfo: true,
         } as unknown as ChatRoom);
 
         break;
@@ -98,7 +99,8 @@ export class ChatService {
           chatRoomName: `您已加入团队：${agreeJoinTeamApplyInfo.groupId}`,
           type,
           agreeJoinTeamApplyInfo,
-          chatObjAvatarUrl: user.avatarUrl,
+          chatObjAvatarUrl: [user.avatarUrl],
+          isWaitingConfirmInfo: true,
         } as unknown as ChatRoom);
 
         break;
@@ -131,7 +133,8 @@ export class ChatService {
           chatRoomName: `${user.nickName}同意了您受理案件：${caseDetail.title}`,
           type,
           publicAgreeHandleInfo,
-          chatObjAvatarUrl: user.avatarUrl,
+          chatObjAvatarUrl: [user.avatarUrl],
+          isWaitingConfirmInfo: true,
         } as unknown as ChatRoom);
         break;
       }
@@ -162,7 +165,8 @@ export class ChatService {
           chatRoomName: `${teamHanldeCaseInfo.groupId}申请受理您的案件：${caseDetail.title}`,
           type,
           teamHanldeCaseInfo,
-          chatObjAvatarUrl: user.avatarUrl,
+          chatObjAvatarUrl: [user.avatarUrl],
+          isWaitingConfirmInfo: true,
         } as unknown as ChatRoom);
         break;
       }

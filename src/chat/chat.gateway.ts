@@ -120,6 +120,7 @@ export class ChatGateway {
     });
 
     if (chatRoomFinded && fromUser) {
+      console.log('fromUser: ', fromUser);
       const newMessage = await this.messageRepository.save({
         content,
         from: fromUser.id,
@@ -207,7 +208,7 @@ export class ChatGateway {
     console.log(users, 'users');
 
     const chatRoom = await this.chatRoomRepository.save({
-      chatObjIds: chatObjIds.join(','),
+      chatObjIds: `${chatObjIds.join(',')},`,
       caseId,
       chatRoomName:
         chatRoomName ||
@@ -282,6 +283,7 @@ export class ChatGateway {
       );
     }
 
+    // =========== unread messages ===========
     const [data, total] = await this.messageRepository
       .createQueryBuilder('message')
       .where(
@@ -303,6 +305,17 @@ export class ChatGateway {
       .orderBy('message.createTime', 'DESC')
       .getManyAndCount();
 
+    const unConfirmChat = await this.chatRoomRepository
+      .createQueryBuilder('chatRoom')
+      .where(
+        'chatRoom.isWaitingConfirmInfo = :isWaitingConfirmInfo AND FIND_IN_SET(:id, chatRoom.chatObjIds)',
+        {
+          isWaitingConfirmInfo: 1,
+          id: client.data.openid,
+        },
+      )
+      .getMany();
+
     const chatMap = new Map<number, Message[]>();
     const chatRoomMap = new Map<number, ChatRoom>();
 
@@ -312,12 +325,26 @@ export class ChatGateway {
       chatMap.set(item.chatRoomId, [...chatMsgs, item]);
     });
 
-    (
-      await this.chatRoomRepository
-        .createQueryBuilder()
-        .whereInIds(Array.from(chatMap.keys()))
-        .getMany()
-    ).forEach((item) => {
+    unConfirmChat.forEach((item) => {
+      chatMap.set(item.id, []);
+    });
+
+    let chatRoomQuery = this.chatRoomRepository.createQueryBuilder('chatRoom');
+    if (Array.from(chatMap.keys()).length) {
+      chatRoomQuery = chatRoomQuery.where(`chatRoom.id IN (:...ids)`, {
+        ids: Array.from(chatMap.keys()) || [],
+      });
+    } else {
+      return this.emitClientSocket(client.data.openid)?.emit(
+        'newMessagesPreviewList',
+        {
+          total: 0,
+          chats: [],
+        },
+      );
+    }
+
+    (await chatRoomQuery.getMany()).forEach((item) => {
       chatRoomMap.set(item.id, item);
     });
 
@@ -369,6 +396,26 @@ export class ChatGateway {
     return {
       success: true,
     };
+  }
+
+  @SubscribeMessage('confrimInfo')
+  async confrimInfo(
+    @MessageBody() { chatRoomId }: { chatRoomId: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const chatRoomInfo = await this.chatRoomRepository.findOne({
+      where: { id: chatRoomId },
+    });
+    if (chatRoomInfo.chatObjIds.split(',').includes(client.data.openid)) {
+      await this.chatRoomRepository
+        .createQueryBuilder('chatRoom')
+        .update(ChatRoom)
+        .set({
+          isWaitingConfirmInfo: 0,
+        })
+        .where({ id: chatRoomId })
+        .execute();
+    }
   }
 
   async getSimpleUserInfoSet(ids: string[]) {
