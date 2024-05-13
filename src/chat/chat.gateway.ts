@@ -27,8 +27,9 @@ import * as dayjs from 'dayjs';
 
 @WebSocketGateway({
   namespace: 'younglaw',
-  cors: { origin: 'localhost' },
+  cors: { origin: '*' },
   transports: ['polling', 'websocket', 'webtransport'],
+  allowEIO3: true,
 })
 export class ChatGateway {
   constructor(private sessionService: SessionService) {}
