@@ -267,6 +267,7 @@ export class ChatGateway {
     });
   }
 
+  @SubscribeMessage('newMessagesPreviewList')
   async newMessagesPreviewList(client: Socket) {
     const user = await this.userRepository.findOne({
       where: { id: client.data.openid },
