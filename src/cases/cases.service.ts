@@ -70,6 +70,10 @@ export class CasesService {
       const buttons: CASES_BUTTONS_MAP_Value = [];
 
       if (caseFinded.type === 2) {
+        if (caseFinded.status === CASE_STATUS.COMPELETE) {
+          return;
+        }
+
         if (caseFinded.userId === session.userInfo.id) {
           buttons.push(1);
           buttons.push(5);
