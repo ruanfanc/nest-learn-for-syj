@@ -39,6 +39,12 @@ export class HandlepCaseDto {
   isHandle: boolean;
 }
 
+export class CompleteCaseDto {
+  @IsNotEmpty()
+  @IsNumber()
+  caseId: number;
+}
+
 export class AgreeHandlepCaseDto {
   @IsNotEmpty()
   @IsNumber()

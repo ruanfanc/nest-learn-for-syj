@@ -9,6 +9,7 @@ import {
   ReEntrustCaseDto,
   HandlepCaseDto,
   DeleteDto,
+  CompleteCaseDto,
 } from './dto/update-case.dto';
 import { Case } from './entities/case.entity';
 import { CASES_BUTTONS_MAP_Value, CASE_STATUS } from './types';
@@ -97,6 +98,9 @@ export class CasesService {
           }
           if (caseFinded.status === CASE_STATUS.WAITTING && isTeamAdmin) {
             buttons.push(6);
+          }
+          if (caseFinded.status === CASE_STATUS.PROCESSING && isTeamAdmin) {
+            buttons.push(8);
           }
         }
 
@@ -338,6 +342,10 @@ export class CasesService {
       return this.noAuth();
     }
 
+    if (caseById.relateGroup) {
+      return this.caseHasGroup();
+    }
+
     if (!caseById.pendingRelateGroup.includes(groupId)) {
       return this.groupHasGiveUp();
     }
@@ -361,6 +369,71 @@ export class CasesService {
         pendingRelateGroup: [],
         relateGroup: groupId,
         status: CASE_STATUS.PROCESSING,
+      })
+      .where('id=:id', { id: caseId })
+      .execute();
+    return { success: true };
+  }
+
+  async complete({ caseId }: CompleteCaseDto, session: { userInfo: User }) {
+    const groupId = session.userInfo.groupId;
+    const caseById = await this.caseRepository.findOne({
+      where: { id: caseId },
+    });
+    if (!caseById) {
+      return this.noCaseError(caseId);
+    }
+    const team = await this.teamRepository.findOne({
+      where: { id: session.userInfo.groupId },
+    });
+    if (!team.admins?.find((item) => item === session.userInfo.id)) {
+      return this.noAuth();
+    }
+
+    this.chatService.sendMessage({
+      from: session.userInfo.id,
+      to: caseById.userId,
+      type: ChatType.GROUP_APPLY_COMPLETE_CASE,
+      groupApplyCompleteCaseInfo: {
+        groupId: groupId,
+        caseId,
+      },
+    });
+  }
+
+  async agreeComplete(
+    { caseId, groupId }: AgreeHandlepCaseDto,
+    session: { userInfo: User },
+  ) {
+    const caseById = await this.caseRepository.findOne({
+      where: { id: caseId },
+    });
+    if (!caseById) {
+      return this.noCaseError(caseId);
+    }
+    const team = await this.teamRepository.findOne({
+      where: { id: groupId },
+    });
+    if (caseById.userId !== session.userInfo.id) {
+      return this.noAuth();
+    }
+
+    team.admins.forEach((item) => {
+      this.chatService.sendMessage({
+        from: session.userInfo.id,
+        to: item,
+        type: ChatType.CASE_BE_AGREEDED_COMPLETE,
+        caseBeAgreededCompleteInfo: {
+          caseId: caseId,
+        },
+      });
+    });
+
+    await this.caseRepository
+      .createQueryBuilder()
+      .update(Case)
+      .set({
+        status: CASE_STATUS.COMPELETE,
       })
       .where('id=:id', { id: caseId })
       .execute();
@@ -432,6 +505,19 @@ export class CasesService {
       {
         errorno: 11,
         errormsg: `该团队已经放弃受理`,
+        data: {
+          success: false,
+        },
+      },
+      HttpStatus.OK,
+    );
+  }
+
+  caseHasGroup() {
+    throw new HttpException(
+      {
+        errorno: 21,
+        errormsg: `改案件已被受理`,
         data: {
           success: false,
         },

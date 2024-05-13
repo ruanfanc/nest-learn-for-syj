@@ -5,6 +5,7 @@ import {
   AgreeHandlepCaseDto,
   AuditCaseDto,
   CaseListDto,
+  CompleteCaseDto,
   DeleteDto,
   HandlepCaseDto,
   ReEntrustCaseDto,
@@ -42,6 +43,16 @@ export class CasesController {
   @Post('/agreeHandle')
   agreeHandle(@Body() body: AgreeHandlepCaseDto, @Session() session) {
     return this.casesService.agreeHandle(body, session);
+  }
+
+  @Post('/complete')
+  complete(@Body() body: CompleteCaseDto, @Session() session) {
+    return this.casesService.complete(body, session);
+  }
+
+  @Post('/agreeComplete')
+  agreeComplete(@Body() body: AgreeHandlepCaseDto, @Session() session) {
+    return this.casesService.agreeComplete(body, session);
   }
 
   @Post('/reEntrustGroup')

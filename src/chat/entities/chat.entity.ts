@@ -13,6 +13,8 @@ export enum ChatType {
   PEOPLE_APPROVE_CASE = 4,
   GROUP = 5,
   AGREE_JOIN_TEAM_APPLY = 6,
+  GROUP_APPLY_COMPLETE_CASE = 7,
+  CASE_BE_AGREEDED_COMPLETE = 8,
 }
 
 @Entity('message', { schema: 'younglaw' })
@@ -88,6 +90,16 @@ export class ChatRoom {
 
   @Column('json', { name: 'publicAgreeHandleInfo', nullable: true })
   publicAgreeHandleInfo?: {
+    caseId: number;
+  };
+
+  @Column('json', { name: 'groupApplyCompleteCaseInfo', nullable: true })
+  groupApplyCompleteCaseInfo?: {
+    caseId: number;
+    groupId: string;
+  };
+  @Column('json', { name: 'caseBeAgreededCompleteInfo', nullable: true })
+  caseBeAgreededCompleteInfo?: {
     caseId: number;
   };
 }

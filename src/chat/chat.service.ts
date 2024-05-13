@@ -22,6 +22,8 @@ export class ChatService {
     joinTeamApplyInfo,
     publicAgreeHandleInfo,
     agreeJoinTeamApplyInfo,
+    groupApplyCompleteCaseInfo,
+    caseBeAgreededCompleteInfo,
   }: {
     from: string;
     to: string;
@@ -41,6 +43,13 @@ export class ChatService {
     publicAgreeHandleInfo?: {
       caseId: number;
       groupId: string;
+    };
+    groupApplyCompleteCaseInfo?: {
+      caseId: number;
+      groupId: string;
+    };
+    caseBeAgreededCompleteInfo?: {
+      caseId: number;
     };
   }) {
     let user: User;
@@ -172,6 +181,71 @@ export class ChatService {
         break;
       }
 
+      case ChatType.GROUP_APPLY_COMPLETE_CASE: {
+        if (!groupApplyCompleteCaseInfo) {
+          throw new HttpException(
+            {
+              errorno: 23,
+              errormsg: '缺少groupApplyCompleteCase',
+              data: {
+                success: false,
+              },
+            },
+            HttpStatus.OK,
+          );
+        }
+
+        user = await this.userRepository.findOne({
+          where: { id: from },
+        });
+
+        const caseDetail = await this.casesRepository.findOne({
+          where: { id: groupApplyCompleteCaseInfo.caseId },
+        });
+
+        chatRoom = await this.chatRoomRepository.save({
+          chatObjIds: to,
+          chatRoomName: `${groupApplyCompleteCaseInfo.groupId}申请完结您的案件的全部流程（案件已成功处理）：${caseDetail.title}`,
+          type,
+          groupApplyCompleteCaseInfo,
+          chatObjAvatarUrl: [user.avatarUrl],
+          isWaitingConfirmInfo: true,
+        } as unknown as ChatRoom);
+        break;
+      }
+
+      case ChatType.CASE_BE_AGREEDED_COMPLETE: {
+        if (!caseBeAgreededCompleteInfo) {
+          throw new HttpException(
+            {
+              errorno: 23,
+              errormsg: '缺少caseBeAgreededCompleteInfo',
+              data: {
+                success: false,
+              },
+            },
+            HttpStatus.OK,
+          );
+        }
+
+        user = await this.userRepository.findOne({
+          where: { id: from },
+        });
+
+        const caseDetail = await this.casesRepository.findOne({
+          where: { id: caseBeAgreededCompleteInfo.caseId },
+        });
+
+        chatRoom = await this.chatRoomRepository.save({
+          chatObjIds: to,
+          chatRoomName: `${user.nickName}同意了您完结案件：${caseDetail.title}`,
+          type,
+          caseBeAgreededCompleteInfo,
+          chatObjAvatarUrl: [user.avatarUrl],
+          isWaitingConfirmInfo: true,
+        } as unknown as ChatRoom);
+        break;
+      }
       default:
         break;
     }

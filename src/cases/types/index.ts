@@ -49,6 +49,7 @@ export const CASES_BUTTONS_MAP = {
   5: '删除案件',
   6: '受理案件',
   7: '审核案件',
+  8: '完成案件',
 };
 
 export type CASES_BUTTONS_MAP_Value = (keyof typeof CASES_BUTTONS_MAP)[];
