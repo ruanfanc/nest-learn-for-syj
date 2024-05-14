@@ -34,7 +34,11 @@ export class User {
   @Column('text', { name: 'chatGroups', nullable: true })
   chatGroups: string | null;
 
-  @Column('varchar', { name: 'teacherDegreeLevels', length: 45 })
+  @Column('varchar', {
+    name: 'teacherDegreeLevels',
+    length: 45,
+    nullable: true,
+  })
   teacherDegreeLevels: string;
 }
 
