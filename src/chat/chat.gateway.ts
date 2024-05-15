@@ -6,8 +6,6 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import {
-  ChangeChatDTO,
-  CreateChatDto,
   CreateRoomDTO,
   GetChatDetailDTO,
   SendMessageDTO,
@@ -50,6 +48,7 @@ export class ChatGateway {
       client.data = { openid: query.id };
       this.sessionService.saveSession(query.id as string, {
         sessionId: client.id,
+        isActive: true,
       });
 
       // =============== send preview list ===================
@@ -71,7 +70,7 @@ export class ChatGateway {
             });
           });
         } else {
-          client.disconnect();
+          client.disconnect(true);
           this.sessionService.deleteSession(query.id as string);
           clearInterval(heartbeatInterval);
           console.log(`====== ${query.id} response to long; disconnect ======`);

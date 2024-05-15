@@ -23,7 +23,7 @@ export class SessionService {
     id: string,
     {
       sessionId,
-      isActive = true,
+      isActive,
       heartbeatInterval,
     }: {
       sessionId: string;
