@@ -38,3 +38,9 @@ export class InitUserDto {
   @IsString()
   teacherDegreeLevels: string;
 }
+
+export class GetUserDto {
+  @IsNotEmpty()
+  @IsString()
+  code: string;
+}
