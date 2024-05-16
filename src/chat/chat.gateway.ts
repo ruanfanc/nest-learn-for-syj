@@ -46,6 +46,12 @@ export class ChatGateway {
     if (sessionMemoryStore['sessions']?.[query.cookie]) {
       console.log(`====== auth connect ${query.id} ======`);
       client.data = { openid: query.id };
+      const socketBefore = this.sessionService.findSession(query.id as string);
+      // 已有的socket要断开
+      if (socketBefore) {
+        clearInterval(socketBefore.heartbeatInterval);
+        this.sessionService.deleteSession(query.id as string);
+      }
 
       // =============== send preview list ===================
       this.newMessagesPreviewList(client);
