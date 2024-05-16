@@ -69,6 +69,10 @@ export class CasesService {
     const getButtons = async () => {
       const buttons: CASES_BUTTONS_MAP_Value = [];
 
+      if (!session.userInfo.identity?.length) {
+        return buttons;
+      }
+
       if (caseFinded.type === 2) {
         if (caseFinded.status === CASE_STATUS.COMPELETE) {
           return;
