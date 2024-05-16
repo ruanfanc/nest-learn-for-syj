@@ -46,10 +46,6 @@ export class ChatGateway {
     if (sessionMemoryStore['sessions']?.[query.cookie]) {
       console.log(`====== auth connect ${query.id} ======`);
       client.data = { openid: query.id };
-      this.sessionService.saveSession(query.id as string, {
-        sessionId: client.id,
-        isActive: true,
-      });
 
       // =============== send preview list ===================
       this.newMessagesPreviewList(client);
@@ -76,6 +72,12 @@ export class ChatGateway {
           console.log(`====== ${query.id} response to long; disconnect ======`);
         }
       }, 10000);
+
+      this.sessionService.saveSession(query.id as string, {
+        sessionId: client.id,
+        isActive: true,
+        heartbeatInterval,
+      });
     } else {
       client.disconnect(true);
       console.log('====== auth fail disconnect ======');
@@ -83,6 +85,8 @@ export class ChatGateway {
   }
 
   handleDisconnect(client: Socket) {
+    console.log('======== handleDisconnect ==========');
+
     clearInterval(
       this.sessionService.findSession(client.data.openid).heartbeatInterval,
     );
