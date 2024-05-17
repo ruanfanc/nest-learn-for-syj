@@ -24,6 +24,7 @@ export class CasesService {
   constructor(private chatService: ChatService) {}
   @InjectRepository(Case) private caseRepository: Repository<Case>;
   @InjectRepository(Team) private teamRepository: Repository<Team>;
+  @InjectRepository(User) private userRepository: Repository<User>;
 
   async editCase(_editCaseDto: EditCaseDto, session) {
     if (_editCaseDto.id) {
@@ -62,14 +63,21 @@ export class CasesService {
     const caseFinded = await this.caseRepository.findOne({
       where: { id: Number(id) },
     });
+    const user = await this.userRepository.findOne({
+      where: { id: session.userInfo.id },
+    });
 
     if (!caseFinded) {
       this.noCaseError(id);
     }
+    if (!user) {
+      this.noAuth();
+    }
+
     const getButtons = async () => {
       const buttons: CASES_BUTTONS_MAP_Value = [];
 
-      if (!session.userInfo.identity?.length) {
+      if (!user.identity?.length) {
         return buttons;
       }
 
@@ -78,7 +86,7 @@ export class CasesService {
           return;
         }
 
-        if (caseFinded.userId === session.userInfo.id) {
+        if (caseFinded.userId === user.id) {
           buttons.push(1);
           buttons.push(5);
           // ============= 重新委托团队 ==================
@@ -90,16 +98,16 @@ export class CasesService {
           buttons.push(2);
 
           // ======================= 放弃受理 ===========================
-          const team = session.userInfo.groupId
+          const team = user.groupId
             ? await this.teamRepository.findOne({
-                where: { id: session.userInfo.groupId },
+                where: { id: user.groupId },
                 select: ['admins'],
               })
             : null;
 
-          const isTeamAdmin = !!team?.admins?.includes(session.userInfo.id);
+          const isTeamAdmin = !!team?.admins?.includes(user.id);
 
-          if (session.userInfo.groupId === caseFinded.relateGroup) {
+          if (user.groupId === caseFinded.relateGroup) {
             if (isTeamAdmin) {
               buttons.push(4);
             }
@@ -112,16 +120,16 @@ export class CasesService {
           }
         }
 
-        if (session.userInfo.identity.includes(USER_IDENTITY.MANAGER)) {
+        if (user.identity.includes(USER_IDENTITY.MANAGER)) {
           buttons.push(7);
         }
       } else {
-        if (caseFinded.userId === session.userInfo.id) {
+        if (caseFinded.userId === user.id) {
           buttons.push(1);
           buttons.push(5);
         }
 
-        if (session.userInfo.identity.includes(USER_IDENTITY.MANAGER)) {
+        if (user.identity.includes(USER_IDENTITY.MANAGER)) {
           buttons.push(7);
         }
       }
