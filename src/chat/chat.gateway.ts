@@ -183,11 +183,7 @@ export class ChatGateway {
       .createQueryBuilder('chatRoom')
       .where('chatRoom.type=:type', { type: ChatType.NORMAL })
       .andWhere(
-        `FIND_IN_SET(:id1, ${replaceSqlEmptyStr(
-          'chatRoom.chatObjIds',
-        )}) AND FIND_IN_SET(:id2, ${replaceSqlEmptyStr(
-          'chatRoom.chatObjIds',
-        )})`,
+        `FIND_IN_SET(:id1, chatRoom.chatObjIds) AND FIND_IN_SET(:id2, chatRoom.chatObjIds)`,
         {
           id1: chatObjIds[0],
           id2: chatObjIds[1],
@@ -394,6 +390,41 @@ export class ChatGateway {
     @MessageBody() { messageIds }: { messageIds: string[] },
     @ConnectedSocket() client: Socket,
   ) {
+    const messages = await this.messageRepository
+      .createQueryBuilder('message')
+      .whereInIds(messageIds)
+      .getMany();
+
+    if (!messages.length) {
+      return;
+    }
+
+    // ============== 判断是否已读 ================
+    const room = await this.chatRoomRepository
+      .createQueryBuilder('chatRoom')
+      .where('FIND_IN_SET(:value, chatRoom.messagesIds)', {
+        value: messageIds[0],
+      })
+      .getOne();
+    const roomChatIds = new Set(
+      room.chatObjIds.split(',').filter((item) => !!item),
+    );
+
+    const readedMessages: number[] = [];
+
+    messages.forEach((item) => {
+      const originReaded = new Set(
+        [...item.chatObjsReaded.split(','), client.data.openid].filter(
+          (item) => !!item,
+        ),
+      );
+
+      if (roomChatIds.size === originReaded.size) {
+        readedMessages.push(item.id);
+      }
+    });
+
+    // 添加已读
     await this.messageRepository
       .createQueryBuilder('message')
       .update(Message)
@@ -402,6 +433,16 @@ export class ChatGateway {
           joinStringSet('message.chatObjsReaded', client.data.openid),
       })
       .whereInIds(messageIds)
+      .execute();
+
+    // 更新是否已读
+    await this.messageRepository
+      .createQueryBuilder('message')
+      .update(Message)
+      .set({
+        isReaded: true,
+      })
+      .whereInIds(readedMessages)
       .execute();
 
     return {
