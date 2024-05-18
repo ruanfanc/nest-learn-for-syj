@@ -16,7 +16,7 @@ export class UserController {
   }
 
   @Post('/getUserInfo')
-  getUserInfo(@Body() getUserInfo: GetUserDto) {
-    return this.userService.getUserInfo(getUserInfo.code);
+  getUserInfo(@Body() getUserInfo: GetUserDto, @Session() session) {
+    return this.userService.getUserInfo(getUserInfo.code, session);
   }
 }

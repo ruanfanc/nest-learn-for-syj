@@ -106,15 +106,6 @@ export class ChatGateway {
     }
   }
 
-  // @SubscribeMessage('changeChat')
-  // changeChat(
-  //   @MessageBody() changeChatDto: ChangeChatDTO,
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   this.sessionService.saveChatId(client.data.openid, changeChatDto.chatId);
-  //   console.log(this.sessionService.sessions);
-  //   return { success: true };
-  // }
   @SubscribeMessage('send')
   async send(
     @MessageBody() { chatRoomId, content }: SendMessageDTO,
@@ -183,10 +174,11 @@ export class ChatGateway {
       .createQueryBuilder('chatRoom')
       .where('chatRoom.type=:type', { type: ChatType.NORMAL })
       .andWhere(
-        `FIND_IN_SET(:id1, chatRoom.chatObjIds) AND FIND_IN_SET(:id2, chatRoom.chatObjIds)`,
+        `FIND_IN_SET(:id1, chatRoom.chatObjIds) AND FIND_IN_SET(:id2, chatRoom.chatObjIds) AND chatRoom.caseId = :caseId`,
         {
           id1: chatObjIds[0],
           id2: chatObjIds[1],
+          caseId,
         },
       )
       .getOne();
@@ -210,8 +202,6 @@ export class ChatGateway {
         select: ['title'],
       });
     }
-
-    console.log(users, 'users');
 
     const chatRoom = await this.chatRoomRepository.save({
       chatObjIds: `${chatObjIds.join(',')},`,
