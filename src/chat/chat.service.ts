@@ -134,17 +134,26 @@ export class ChatService {
           where: { id: from },
         });
 
+        const teamMates = await this.userRepository
+          .createQueryBuilder('user')
+          .where('user.groupId =: groupId', {
+            groupId: publicAgreeHandleInfo.groupId,
+          })
+          .select(['id', 'avatarUrl'])
+          .getMany();
+
         const caseDetail = await this.casesRepository.findOne({
           where: { id: publicAgreeHandleInfo.caseId },
         });
 
         chatRoom = await this.chatRoomRepository.save({
-          chatObjIds: to,
-          chatRoomName: `${user.nickName}同意了您受理案件：${caseDetail.title}`,
-          type,
-          publicAgreeHandleInfo,
-          chatObjAvatarUrl: [user.avatarUrl],
-          isWaitingConfirmInfo: true,
+          chatObjIds: [user.id, ...teamMates.map((item) => item.id)],
+          chatRoomName: caseDetail.title,
+          type: ChatType.GROUP,
+          chatObjAvatarUrl: [
+            user.avatarUrl,
+            ...teamMates.map((item) => item.avatarUrl),
+          ],
         } as unknown as ChatRoom);
         break;
       }

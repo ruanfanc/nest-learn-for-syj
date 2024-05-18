@@ -127,10 +127,10 @@ export class TeamService {
     }
 
     await this.teamRepository
-      .createQueryBuilder()
+      .createQueryBuilder('team')
       .update(Team)
       .set({ admins: editAdmins })
-      .where('id=:id', { id })
+      .where('team.id=:value', { value: id })
       .execute();
 
     return { success: true };
