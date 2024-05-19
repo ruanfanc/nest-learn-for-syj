@@ -7,6 +7,7 @@ import { CasesModule } from './cases/cases.module';
 import { TeamModule } from './team/team.module';
 import { ChatModule } from './chat/chat.module';
 import { SessionModule } from './session/session.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SessionModule } from './session/session.module';
       synchronize: true,
       autoLoadEntities: true,
     }),
+    ScheduleModule.forRoot(),
     CasesModule,
     TeamModule,
     ChatModule,

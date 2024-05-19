@@ -5,6 +5,9 @@ import { ChatRoom, ChatType, Message } from './entities/chat.entity';
 import { Case } from 'src/cases/entities/case.entity';
 import { User } from 'src/user/entities/user.entity';
 import { joinStringSet } from 'src/common/utils';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import axios from 'axios';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class ChatService {
@@ -54,6 +57,21 @@ export class ChatService {
   }) {
     let user: User;
     let chatRoom: ChatRoom;
+    const hadChatRoom = await this.chatRoomRepository
+      .createQueryBuilder('chatRoom')
+      .where(
+        'FIND_IN_SET(chatRoom.chatObjIds, :chatObjIds) AND chatRoom.type = :type AND chatRoom.isWaitingConfirmInfo = :isWaitingConfirmInfo',
+        {
+          chatObjIds: [to, from].join(','),
+          type,
+          isWaitingConfirmInfo: true,
+        },
+      )
+      .getOne();
+
+    if (hadChatRoom) {
+      return;
+    }
 
     switch (type) {
       case ChatType.JOIN_TEAM_APPLY: {
@@ -267,5 +285,64 @@ export class ChatService {
       })
       .where('id=:id', { id: to })
       .execute();
+  }
+
+  @Cron(CronExpression.EVERY_2_HOURS) // 每10分钟检查一次
+  async handleCron() {
+    console.log('Checking for unread messages...');
+    const accessTokenData = await axios.get(
+      'https://api.weixin.qq.com/cgi-bin/token?appid=wx559e4273b8badf2a&secret=7b8954140d68ecf74f21f53b058138e6&grant_type=client_credential',
+    );
+
+    // 查询数据库中的未读消息
+    const unreadMessages = await this.messageRepository.find({
+      where: { isReaded: null },
+    });
+
+    const unreadChat = await this.chatRoomRepository.find({
+      where: { isWaitingConfirmInfo: 1 },
+    });
+
+    this.messageRepository.delete({ isReaded: true });
+    this.chatRoomRepository.delete({ isWaitingConfirmInfo: 0 });
+
+    const postUsers = new Map<string, number>();
+
+    unreadMessages.forEach((item) => {
+      const unreadNum = postUsers.get(item.to) || 0;
+      postUsers.set(item.to, unreadNum + 1);
+    });
+
+    unreadChat.forEach((item) => {
+      const unreadNum = postUsers.get(item.chatObjIds.split(',')[0]) || 0;
+      postUsers.set(item.chatObjIds.split(',')[0], unreadNum + 1);
+    });
+    console.log('unreadMessages: ', postUsers);
+
+    const time = dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss');
+
+    // 推送未读消息
+    postUsers.forEach(async (item, key) => {
+      axios
+        .post(
+          `https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=${accessTokenData.data.access_token}`,
+          {
+            template_id: '9uYUq3WytK06SBOKqAmhBqjfNdp_01fKvUkhSrdAbDE',
+            page: 'pages/index/index',
+            touser: key,
+            data: {
+              thing7: {
+                value: `您有${item}未读消息，请进入小程序及时查看`,
+              },
+              time5: {
+                value: time,
+              },
+            },
+          },
+        )
+        .then((res) => {
+          console.log(key, res.data);
+        });
+    });
   }
 }
