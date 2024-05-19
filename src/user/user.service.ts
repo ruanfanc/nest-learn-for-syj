@@ -175,7 +175,7 @@ export class UserService {
 
   /** this api is only for internal module */
   async getUserInfo(openid: string, session) {
-    const user = await this.userRepository.find({ where: { id: openid } });
+    const user = await this.userRepository.findOne({ where: { id: openid } });
 
     if (user) {
       session.userInfo = user;
