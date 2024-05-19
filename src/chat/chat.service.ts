@@ -332,7 +332,7 @@ export class ChatService {
             touser: key,
             data: {
               thing7: {
-                value: `您有${item}未读消息，请进入小程序及时查看`,
+                value: `您有${item}条未读消息，请进入小程序及时查看`,
               },
               time5: {
                 value: time,
