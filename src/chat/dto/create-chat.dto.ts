@@ -60,4 +60,6 @@ export class SendMessageDTO {
   @IsNotEmpty()
   @IsString()
   content: string;
+  userId: string;
+  notRead?: boolean;
 }

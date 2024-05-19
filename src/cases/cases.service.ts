@@ -351,9 +351,7 @@ export class CasesService {
     if (!caseById) {
       return this.noCaseError(caseId);
     }
-    const team = await this.teamRepository.findOne({
-      where: { id: groupId },
-    });
+
     if (caseById.userId !== session.userInfo.id) {
       return this.noAuth();
     }
@@ -366,16 +364,13 @@ export class CasesService {
       return this.groupHasGiveUp();
     }
 
-    team.admins.forEach((item) => {
-      this.chatService.sendMessage({
-        from: session.userInfo.id,
-        to: item,
-        type: ChatType.PEOPLE_APPROVE_CASE,
-        publicAgreeHandleInfo: {
-          caseId: caseId,
-          groupId: groupId,
-        },
-      });
+    this.chatService.sendMessage({
+      from: session.userInfo.id,
+      type: ChatType.PEOPLE_APPROVE_CASE,
+      publicAgreeHandleInfo: {
+        caseId: caseId,
+        groupId: groupId,
+      },
     });
 
     await this.caseRepository

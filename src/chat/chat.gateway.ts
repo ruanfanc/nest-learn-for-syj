@@ -108,15 +108,17 @@ export class ChatGateway {
 
   @SubscribeMessage('send')
   async send(
-    @MessageBody() { chatRoomId, content }: SendMessageDTO,
-    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    { chatRoomId, content, userId, notRead = false }: SendMessageDTO,
+    @ConnectedSocket() client?: Socket,
   ) {
+    const openId = client?.data?.openid || userId;
     const chatRoomFinded = await this.chatRoomRepository.findOne({
       where: { id: chatRoomId },
     });
 
     const fromUser = await this.userRepository.findOne({
-      where: { id: client.data.openid },
+      where: { id: openId },
       select: ['id', 'avatarUrl', 'nickName'],
     });
 
@@ -130,11 +132,11 @@ export class ChatGateway {
             ? `@${chatRoomId}`
             : chatRoomFinded.chatObjIds
                 .split(',')
-                .filter((item) => item !== client.data.openid)[0],
+                .filter((item) => item !== openId)[0],
         chatRoomId,
         nickName: fromUser.nickName,
         avatarUrl: fromUser.avatarUrl,
-        chatObjsReaded: `${fromUser.id},`,
+        chatObjsReaded: notRead ? null : `${fromUser.id},`,
       });
 
       await this.chatRoomRepository
@@ -264,20 +266,19 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('newMessagesPreviewList')
-  async newMessagesPreviewList(client: Socket) {
+  async newMessagesPreviewList(client: Socket & { userId?: string }) {
+    const openId = client?.data?.openid || client.userId;
     const user = await this.userRepository.findOne({
-      where: { id: client.data.openid },
+      where: { id: openId },
       select: ['chatGroups'],
     });
+    console.log(user, openId, '12312312');
 
     if (!user?.chatGroups) {
-      return this.emitClientSocket(client.data.openid)?.emit(
-        'newMessagesPreviewList',
-        {
-          total: 0,
-          chats: [],
-        },
-      );
+      return this.emitClientSocket(openId)?.emit('newMessagesPreviewList', {
+        total: 0,
+        chats: [],
+      });
     }
 
     // =========== unread messages ===========
@@ -296,7 +297,7 @@ export class ChatGateway {
           'message.chatObjsReaded',
         )})`,
         {
-          value: client.data.openid,
+          value: openId,
         },
       )
       .orderBy('message.createTime', 'DESC')
@@ -308,7 +309,7 @@ export class ChatGateway {
         'chatRoom.isWaitingConfirmInfo = :isWaitingConfirmInfo AND FIND_IN_SET(:id, chatRoom.chatObjIds)',
         {
           isWaitingConfirmInfo: 1,
-          id: client.data.openid,
+          id: openId,
         },
       )
       .getMany();
@@ -332,20 +333,18 @@ export class ChatGateway {
         ids: Array.from(chatMap.keys()) || [],
       });
     } else {
-      return this.emitClientSocket(client.data.openid)?.emit(
-        'newMessagesPreviewList',
-        {
-          total: 0,
-          chats: [],
-        },
-      );
+      return this.emitClientSocket(openId)?.emit('newMessagesPreviewList', {
+        total: 0,
+        chats: [],
+      });
     }
 
     (await chatRoomQuery.getMany()).forEach((item) => {
       chatRoomMap.set(item.id, item);
     });
+    console.log('chatRoomMap: ', chatRoomMap, chatMap);
 
-    this.emitClientSocket(client.data.openid)?.emit('newMessagesPreviewList', {
+    this.emitClientSocket(openId)?.emit('newMessagesPreviewList', {
       total,
       chats: Array.from(chatMap.entries()).map(([chatId, messages]) => {
         const chatRoom = chatRoomMap.get(chatId);
@@ -404,7 +403,7 @@ export class ChatGateway {
 
     messages.forEach((item) => {
       const originReaded = new Set(
-        [...item.chatObjsReaded.split(','), client.data.openid].filter(
+        [...(item.chatObjsReaded?.split(',') || []), client.data.openid].filter(
           (item) => !!item,
         ),
       );

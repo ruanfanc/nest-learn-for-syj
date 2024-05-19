@@ -8,10 +8,12 @@ import { joinStringSet } from 'src/common/utils';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import axios from 'axios';
 import * as dayjs from 'dayjs';
+import { ChatGateway } from './chat.gateway';
 
 @Injectable()
 export class ChatService {
-  constructor() {}
+  constructor(private chatGateway: ChatGateway) {}
+
   @InjectRepository(Message) private messageRepository: Repository<Message>;
   @InjectRepository(ChatRoom) private chatRoomRepository: Repository<ChatRoom>;
   @InjectRepository(User) private userRepository: Repository<User>;
@@ -29,7 +31,7 @@ export class ChatService {
     caseBeAgreededCompleteInfo,
   }: {
     from: string;
-    to: string;
+    to?: string;
     type: ChatType;
     joinTeamApplyInfo?: {
       groupId: string;
@@ -57,6 +59,7 @@ export class ChatService {
   }) {
     let user: User;
     let chatRoom: ChatRoom;
+    let teamMates: User[];
     const hadChatRoom = await this.chatRoomRepository
       .createQueryBuilder('chatRoom')
       .where(
@@ -152,12 +155,11 @@ export class ChatService {
           where: { id: from },
         });
 
-        const teamMates = await this.userRepository
+        teamMates = await this.userRepository
           .createQueryBuilder('user')
-          .where('user.groupId =: groupId', {
-            groupId: publicAgreeHandleInfo.groupId,
+          .where('user.groupId = :value', {
+            value: publicAgreeHandleInfo.groupId,
           })
-          .select(['id', 'avatarUrl'])
           .getMany();
 
         const caseDetail = await this.casesRepository.findOne({
@@ -165,7 +167,7 @@ export class ChatService {
         });
 
         chatRoom = await this.chatRoomRepository.save({
-          chatObjIds: [user.id, ...teamMates.map((item) => item.id)],
+          chatObjIds: [user.id, ...teamMates.map((item) => item.id)].join(','),
           chatRoomName: caseDetail.title,
           type: ChatType.GROUP,
           chatObjAvatarUrl: [
@@ -277,14 +279,40 @@ export class ChatService {
         break;
     }
 
-    this.userRepository
-      .createQueryBuilder('user')
-      .update(User)
-      .set({
-        chatGroups: () => joinStringSet('user.chatGroups', chatRoom.id),
-      })
-      .where('id=:id', { id: to })
-      .execute();
+    if (to) {
+      await this.userRepository
+        .createQueryBuilder('user')
+        .update(User)
+        .set({
+          chatGroups: () => joinStringSet('user.chatGroups', chatRoom.id),
+        })
+        .where('id=:id', { id: to })
+        .execute();
+    }
+
+    if (type === ChatType.PEOPLE_APPROVE_CASE) {
+      await this.chatGateway.send({
+        userId: user.id,
+        content: '已同意受理案件',
+        chatRoomId: chatRoom.id,
+        notRead: true,
+      });
+
+      [...teamMates, user].forEach(async (item) => {
+        await this.userRepository
+          .createQueryBuilder('user')
+          .update(User)
+          .set({
+            chatGroups: () => joinStringSet('user.chatGroups', chatRoom.id),
+          })
+          .where('id=:id', { id: item.id })
+          .execute();
+
+        this.chatGateway.newMessagesPreviewList({
+          userId: item.id,
+        } as any);
+      });
+    }
   }
 
   @Cron(CronExpression.EVERY_2_HOURS) // 每小时检查一次
