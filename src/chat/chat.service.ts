@@ -54,6 +54,21 @@ export class ChatService {
   }) {
     let user: User;
     let chatRoom: ChatRoom;
+    const hadChatRoom = await this.chatRoomRepository
+      .createQueryBuilder('chatRoom')
+      .where(
+        'FIND_IN_SET(chatRoom.chatObjIds, :chatObjIds) AND chatRoom.type = :type AND chatRoom.isWaitingConfirmInfo = :isWaitingConfirmInfo',
+        {
+          chatObjIds: [to, from].join(','),
+          type,
+          isWaitingConfirmInfo: true,
+        },
+      )
+      .getOne();
+
+    if (hadChatRoom) {
+      return;
+    }
 
     switch (type) {
       case ChatType.JOIN_TEAM_APPLY: {
