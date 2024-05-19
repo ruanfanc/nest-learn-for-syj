@@ -287,7 +287,7 @@ export class ChatService {
       .execute();
   }
 
-  @Cron(CronExpression.EVERY_2_HOURS) // 每10分钟检查一次
+  @Cron(CronExpression.EVERY_2_HOURS) // 每小时检查一次
   async handleCron() {
     console.log('Checking for unread messages...');
     const accessTokenData = await axios.get(
