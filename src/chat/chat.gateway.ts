@@ -272,7 +272,6 @@ export class ChatGateway {
       where: { id: openId },
       select: ['chatGroups'],
     });
-    console.log(user, openId, '12312312');
 
     if (!user?.chatGroups) {
       return this.emitClientSocket(openId)?.emit('newMessagesPreviewList', {
@@ -342,7 +341,6 @@ export class ChatGateway {
     (await chatRoomQuery.getMany()).forEach((item) => {
       chatRoomMap.set(item.id, item);
     });
-    console.log('chatRoomMap: ', chatRoomMap, chatMap);
 
     this.emitClientSocket(openId)?.emit('newMessagesPreviewList', {
       total,
