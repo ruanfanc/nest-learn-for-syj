@@ -323,22 +323,41 @@ export class ChatService {
     );
 
     // 查询数据库中的未读消息
-    const unreadMessages = await this.messageRepository.find({
-      where: { isReaded: null },
-    });
+    const unreadMessages = await this.messageRepository
+      .createQueryBuilder('message')
+      .where(`message.isReaded is NULL`)
+      .getMany();
 
-    const unreadChat = await this.chatRoomRepository.find({
-      where: { isWaitingConfirmInfo: 1 },
-    });
+    const unreadChat = await this.chatRoomRepository
+      .createQueryBuilder('chatRoom')
+      .where(`chatRoom.isWaitingConfirmInfo = 1`)
+      .getMany();
 
     this.messageRepository.delete({ isReaded: true });
     this.chatRoomRepository.delete({ isWaitingConfirmInfo: 0 });
 
     const postUsers = new Map<string, number>();
 
-    unreadMessages.forEach((item) => {
-      const unreadNum = postUsers.get(item.to) || 0;
-      postUsers.set(item.to, unreadNum + 1);
+    unreadMessages.forEach(async (item) => {
+      if (item.to.includes('@')) {
+        const chatRoom = await this.chatRoomRepository.findOne({
+          where: { id: item.chatRoomId },
+        });
+        const chatObjIdsSet = new Set(chatRoom.chatObjIds.split(','));
+        item.chatObjsReaded.split(',').forEach((item) => {
+          if (chatObjIdsSet.has(item)) {
+            chatObjIdsSet.delete(item);
+          }
+        });
+
+        chatObjIdsSet.forEach((item) => {
+          const unreadNum = postUsers.get(item) || 0;
+          postUsers.set(item, unreadNum + 1);
+        });
+      } else {
+        const unreadNum = postUsers.get(item.to) || 0;
+        postUsers.set(item.to, unreadNum + 1);
+      }
     });
 
     unreadChat.forEach((item) => {

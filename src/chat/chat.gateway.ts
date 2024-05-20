@@ -284,7 +284,7 @@ export class ChatGateway {
     const [data, total] = await this.messageRepository
       .createQueryBuilder('message')
       .where(
-        `FIND_IN_SET(message.chatRoomId, ${replaceSqlEmptyStr(
+        `message.isReaded is NULL AND FIND_IN_SET(message.chatRoomId, ${replaceSqlEmptyStr(
           ':chatRoomIds',
         )})`,
         {
@@ -305,10 +305,9 @@ export class ChatGateway {
     const unConfirmChat = await this.chatRoomRepository
       .createQueryBuilder('chatRoom')
       .where(
-        'chatRoom.isWaitingConfirmInfo = :isWaitingConfirmInfo AND FIND_IN_SET(:id, chatRoom.chatObjIds)',
+        'chatRoom.isWaitingConfirmInfo = 1 AND FIND_IN_SET(:id, chatRoom.chatObjIds)',
         {
-          isWaitingConfirmInfo: 1,
-          id: openId,
+          id: client.data.openid,
         },
       )
       .getMany();
