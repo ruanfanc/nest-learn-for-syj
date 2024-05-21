@@ -8,6 +8,8 @@ import { TeamModule } from './team/team.module';
 import { ChatModule } from './chat/chat.module';
 import { SessionModule } from './session/session.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { FileModule } from './file/file.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 @Module({
   imports: [
@@ -28,6 +30,15 @@ import { ScheduleModule } from '@nestjs/schedule';
     TeamModule,
     ChatModule,
     SessionModule,
+    FileModule,
+    ServeStaticModule.forRoot({
+      rootPath: '/www/uploadFiles', // 绝对路径
+      serveRoot: '/uploads',
+    }),
+    // ServeStaticModule.forRoot({
+    //   rootPath: '/Users/didi/downloads', // 绝对路径
+    //   serveRoot: '/uploads',
+    // }),
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -115,6 +115,18 @@ export class UserService {
         session.avatarUrl = user.avatarUrl;
         session.userInfo = user;
         return { ...user };
+      } else {
+        session.openid = openid;
+        session.authenticated = true;
+
+        await this.userRepository.save({
+          id: openid,
+        });
+        const userInfo = {
+          id: openid,
+        };
+        session.userInfo = userInfo;
+        return userInfo;
       }
     }
   }
