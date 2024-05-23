@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  OnModuleInit,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { AddManager, ApplyTeam, JoinTeam } from './dto/team.dto';
 import { AuthLevel, Team } from './entities/team.entity';
@@ -8,10 +13,35 @@ import { ChatService } from 'src/chat/chat.service';
 import { ChatType } from 'src/chat/entities/chat.entity';
 
 @Injectable()
-export class TeamService {
+export class TeamService implements OnModuleInit {
   constructor(private chatService: ChatService) {}
   @InjectRepository(Team) private teamRepository: Repository<Team>;
   @InjectRepository(User) private userRepository: Repository<User>;
+
+  async onModuleInit() {
+    // const teams = await this.teamRepository.createQueryBuilder().getMany();
+    // teams.forEach(async (team) => {
+    //   const users = await this.userRepository
+    //     .createQueryBuilder('user')
+    //     .where(`user.groupId = :groupId`, {
+    //       groupId: team.id,
+    //     })
+    //     .getMany();
+    //   await this.teamRepository
+    //     .createQueryBuilder('team')
+    //     .update(Team)
+    //     .set({
+    //       admins: users.map((item) => ({
+    //         id: item.id,
+    //         level: item.identity.includes(USER_IDENTITY.TEACHER)
+    //           ? AuthLevel.TEACHER
+    //           : AuthLevel.MANAGER,
+    //       })),
+    //     })
+    //     .where('team.id=:value', { value: team.id })
+    //     .execute();
+    // });
+  }
 
   async audit(joinTeam: JoinTeam, session) {
     const { groupId, userId, isPass } = joinTeam;
