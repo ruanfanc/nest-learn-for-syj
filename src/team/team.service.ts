@@ -18,10 +18,23 @@ export class TeamService {
 
   async audit(joinTeam: JoinTeam, session) {
     const { groupId, userId, isPass } = joinTeam;
+    const targetUser = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+    if (targetUser.groupId) {
+      throw new HttpException(
+        {
+          errorno: 24,
+          errormsg: `改用户已加入其它团队，请联系其退出该团队后再申请`,
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     const team = await this.teamRepository.findOne({
       where: { id: groupId },
     });
     this.testTeamAdmin(team, session.openid);
+
     if (isPass) {
       this.chatService.sendMessage({
         from: session.openid,
