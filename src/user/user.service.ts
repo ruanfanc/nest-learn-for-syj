@@ -154,7 +154,7 @@ export class UserService {
     const identity = user.identity;
 
     if (identity.includes(USER_IDENTITY.TEACHER)) {
-      await this.teamService.createTeam(initUse.groupId, session.userInfo.id);
+      await this.teamService.createTeam(initUse.groupId, session.userInfo);
     } else if (identity.includes(USER_IDENTITY.STUDENT)) {
       const team = await this.teamRepository.findOne({
         where: { id: initUse.groupId },
@@ -162,7 +162,7 @@ export class UserService {
       team.admins.forEach((item) => {
         this.chatService.sendMessage({
           from: user.id,
-          to: item,
+          to: item.id,
           type: ChatType.JOIN_TEAM_APPLY,
           joinTeamApplyInfo: {
             groupId: initUse.groupId,

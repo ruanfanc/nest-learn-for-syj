@@ -1,4 +1,5 @@
-import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { AuthLevel } from '../entities/team.entity';
 
 export class JoinTeam {
   @IsString()
@@ -38,4 +39,7 @@ export class AddManager {
   @IsBoolean()
   @IsNotEmpty()
   isAdd: boolean;
+  @IsNumber()
+  @IsNotEmpty()
+  level: AuthLevel;
 }

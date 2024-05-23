@@ -105,7 +105,9 @@ export class CasesService {
               })
             : null;
 
-          const isTeamAdmin = !!team?.admins?.includes(user.id);
+          const isTeamAdmin = !!team?.admins?.find(
+            (item) => item.id === user.id,
+          );
 
           if (user.groupId === caseFinded.relateGroup) {
             if (isTeamAdmin) {
@@ -289,7 +291,7 @@ export class CasesService {
     const team = await this.teamRepository.findOne({
       where: { id: session.userInfo.groupId },
     });
-    if (!team.admins?.find((item) => item === session.userInfo.id)) {
+    if (!team.admins?.find((item) => item.id === session.userInfo.id)) {
       return this.noAuth();
     }
 
@@ -397,7 +399,7 @@ export class CasesService {
     const team = await this.teamRepository.findOne({
       where: { id: session.userInfo.groupId },
     });
-    if (!team.admins?.find((item) => item === session.userInfo.id)) {
+    if (!team.admins?.find((item) => item.id === session.userInfo.id)) {
       return this.noAuth();
     }
 
@@ -432,7 +434,7 @@ export class CasesService {
     team.admins.forEach((item) => {
       this.chatService.sendMessage({
         from: session.userInfo.id,
-        to: item,
+        to: item.id,
         type: ChatType.CASE_BE_AGREEDED_COMPLETE,
         caseBeAgreededCompleteInfo: {
           caseId: caseId,

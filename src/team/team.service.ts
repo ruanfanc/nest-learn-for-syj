@@ -1,11 +1,9 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { AddManager, ApplyTeam, JoinTeam } from './dto/team.dto';
-import { Team } from './entities/team.entity';
+import { AuthLevel, Team } from './entities/team.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/user/entities/user.entity';
-import { TeamApply } from './entities/teamApply.entity';
-import * as dayjs from 'dayjs';
+import { USER_IDENTITY, User } from 'src/user/entities/user.entity';
 import { ChatService } from 'src/chat/chat.service';
 import { ChatType } from 'src/chat/entities/chat.entity';
 
@@ -13,7 +11,6 @@ import { ChatType } from 'src/chat/entities/chat.entity';
 export class TeamService {
   constructor(private chatService: ChatService) {}
   @InjectRepository(Team) private teamRepository: Repository<Team>;
-  @InjectRepository(Team) private teamApplyRepository: Repository<TeamApply>;
   @InjectRepository(User) private userRepository: Repository<User>;
 
   async audit(joinTeam: JoinTeam, session) {
@@ -63,11 +60,11 @@ export class TeamService {
       where: { id: groupId },
     });
     this.testTeam(team, applyTeam.groupId);
-    await this.teamApplyRepository.save({
-      userId,
-      groupId,
-      createTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
-    });
+    // await this.teamApplyRepository.save({
+    //   userId,
+    //   groupId,
+    //   createTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+    // });
     return { success: true };
   }
 
@@ -87,8 +84,18 @@ export class TeamService {
     return ids;
   }
 
-  async createTeam(groupId: string, userId) {
-    await this.teamRepository.save({ id: groupId, admins: [userId] });
+  async createTeam(groupId: string, userInfo: User) {
+    await this.teamRepository.save({
+      id: groupId,
+      admins: [
+        {
+          id: userInfo.id,
+          level: userInfo.identity.includes(USER_IDENTITY.TEACHER)
+            ? AuthLevel.TEACHER
+            : AuthLevel.LEARDER,
+        },
+      ],
+    });
   }
 
   async members(id: string) {
@@ -105,7 +112,8 @@ export class TeamService {
       return members.map((item) => {
         return {
           ...item,
-          isAdmin: team.admins?.includes(item.id),
+          adminLevel:
+            team.admins?.find((admin) => admin.id === item.id).level || 4,
         };
       });
     } else {
@@ -120,7 +128,7 @@ export class TeamService {
   }
 
   async addManager(addManager: AddManager, session) {
-    const { id, userId, isAdd } = addManager;
+    const { id, userId, isAdd, level } = addManager;
 
     const team = await this.teamRepository.findOne({
       where: { id },
@@ -128,15 +136,15 @@ export class TeamService {
     });
 
     this.testTeam(team, id);
-    this.testTeamAdmin(team, session.openid);
+    this.testTeamAdminLevel(team, session.openid, 3);
 
     let editAdmins = team.admins;
     if (isAdd) {
-      editAdmins = team.admins.includes(userId)
+      editAdmins = team.admins.find((item) => item.id === userId)
         ? team.admins
-        : [...team.admins, userId];
+        : [...team.admins, { id: userId, level }];
     } else {
-      editAdmins = editAdmins.filter((admin) => admin !== userId);
+      editAdmins = editAdmins.filter((admin) => admin.id === userId);
     }
 
     await this.teamRepository
@@ -158,7 +166,7 @@ export class TeamService {
     });
 
     this.testTeam(team, id);
-    this.testTeamAdmin(team, session.openid);
+    this.testTeamAdminLevel(team, session.openid, 4);
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
@@ -186,7 +194,7 @@ export class TeamService {
     if (!team) {
       throw new HttpException(
         {
-          errorno: 4,
+          errorno: 444,
           errormsg: `未找到id为${id}的团队`,
         },
         HttpStatus.BAD_REQUEST,
@@ -195,10 +203,26 @@ export class TeamService {
   }
 
   testTeamAdmin(team: Team, userId: string) {
-    if (!team.admins.includes(userId)) {
+    if (!team.admins.find((item) => item.id === userId)) {
       throw new HttpException(
         {
-          errorno: 1,
+          errorno: 111,
+          errormsg: `该用户没有团队操作权限`,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+  }
+
+  testTeamAdminLevel(team: Team, userId: string, targetLevel: number) {
+    if (
+      !team.admins.find(
+        (item) => item.id === userId && item.level < targetLevel,
+      )
+    ) {
+      throw new HttpException(
+        {
+          errorno: 111,
           errormsg: `该用户没有团队操作权限`,
         },
         HttpStatus.UNAUTHORIZED,
