@@ -334,7 +334,35 @@ export class ChatService {
       .getMany();
 
     this.messageRepository.delete({ isReaded: true });
-    this.chatRoomRepository.delete({ isWaitingConfirmInfo: 0 });
+    await this.chatRoomRepository.delete({
+      isWaitingConfirmInfo: 0,
+    });
+
+    const allChatRooms = await this.chatRoomRepository.find();
+    const allUsers = await this.userRepository.find();
+    const deleteChatRoomSet = new Set(allChatRooms.map((item) => item.id));
+
+    // 清理无用的chatGroup
+    allUsers.forEach((item) => {
+      const chatGroupSet = new Set(item.chatGroups?.split(','));
+      console.log('beforechatGroupSet: ', chatGroupSet);
+
+      chatGroupSet.forEach((item) => {
+        if (!deleteChatRoomSet.has(Number(item))) {
+          chatGroupSet.delete(item);
+        }
+      });
+      console.log('afatGroupSet: ', chatGroupSet);
+
+      this.userRepository
+        .createQueryBuilder('user')
+        .update(User)
+        .set({
+          chatGroups: Array.from(chatGroupSet).join(',') + ',',
+        })
+        .where('user.id = :id', { id: item.id })
+        .execute();
+    });
 
     const postUsers = new Map<string, number>();
 
@@ -343,8 +371,8 @@ export class ChatService {
         const chatRoom = await this.chatRoomRepository.findOne({
           where: { id: item.chatRoomId },
         });
-        const chatObjIdsSet = new Set(chatRoom.chatObjIds.split(','));
-        item.chatObjsReaded.split(',').forEach((item) => {
+        const chatObjIdsSet = new Set(chatRoom.chatObjIds?.split(','));
+        item.chatObjsReaded?.split(',').forEach((item) => {
           if (chatObjIdsSet.has(item)) {
             chatObjIdsSet.delete(item);
           }
@@ -361,10 +389,9 @@ export class ChatService {
     });
 
     unreadChat.forEach((item) => {
-      const unreadNum = postUsers.get(item.chatObjIds.split(',')[0]) || 0;
-      postUsers.set(item.chatObjIds.split(',')[0], unreadNum + 1);
+      const unreadNum = postUsers.get(item.chatObjIds?.split(',')[0]) || 0;
+      postUsers.set(item.chatObjIds?.split(',')[0], unreadNum + 1);
     });
-    console.log('unreadMessages: ', postUsers);
 
     const time = dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss');
 
