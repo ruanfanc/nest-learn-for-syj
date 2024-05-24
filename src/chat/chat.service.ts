@@ -345,14 +345,12 @@ export class ChatService {
     // 清理无用的chatGroup
     allUsers.forEach((item) => {
       const chatGroupSet = new Set(item.chatGroups?.split(','));
-      console.log('beforechatGroupSet: ', chatGroupSet);
 
       chatGroupSet.forEach((item) => {
         if (!deleteChatRoomSet.has(Number(item))) {
           chatGroupSet.delete(item);
         }
       });
-      console.log('afatGroupSet: ', chatGroupSet);
 
       this.userRepository
         .createQueryBuilder('user')
