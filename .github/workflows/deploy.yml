@@ -8,6 +8,7 @@ on:
       - '.github/workflows/*'
       - 'src/**'
       - 'package.json'
+      - 'package-lock.json'
 
 jobs:
   deploy:
