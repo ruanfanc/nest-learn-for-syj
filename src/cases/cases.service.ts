@@ -227,8 +227,14 @@ export class CasesService {
     const skip = (pageNo - 1) * pageSize;
     let query = this.caseRepository.createQueryBuilder('case');
     if (related && !userId && !groupId) {
+      const managerSql = session.userInfo.identity.includes(
+        USER_IDENTITY.MANAGER,
+      )
+        ? ` OR status = ${CASE_STATUS.WAIT_FOR_AUDIT}`
+        : '';
+
       query = query.where(
-        '(case.userId = :userId OR case.relateGroup = :groupId OR JSON_CONTAINS(case.pendingRelateGroup, :value))',
+        `(case.userId = :userId OR case.relateGroup = :groupId OR JSON_CONTAINS(case.pendingRelateGroup, :value))${managerSql}`,
         {
           userId: session.userInfo.id,
           groupId: session.userInfo.groupId,

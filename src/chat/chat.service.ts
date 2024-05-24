@@ -369,7 +369,9 @@ export class ChatService {
         const chatRoom = await this.chatRoomRepository.findOne({
           where: { id: item.chatRoomId },
         });
-        const chatObjIdsSet = new Set(chatRoom.chatObjIds?.split(','));
+        const chatObjIdsSet = new Set(
+          chatRoom.chatObjIds?.split(',') as string[],
+        );
         item.chatObjsReaded?.split(',').forEach((item) => {
           if (chatObjIdsSet.has(item)) {
             chatObjIdsSet.delete(item);
