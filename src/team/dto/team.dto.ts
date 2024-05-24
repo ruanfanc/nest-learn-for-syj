@@ -1,5 +1,12 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { AuthLevel } from '../entities/team.entity';
+import { IsStringArray } from 'src/common';
 
 export class JoinTeam {
   @IsString()
@@ -33,13 +40,25 @@ export class AddManager {
   @IsString()
   @IsNotEmpty()
   id: string;
-  @IsString()
+  @IsStringArray()
   @IsNotEmpty()
-  userId: string;
+  userIds: string;
   @IsBoolean()
   @IsNotEmpty()
   isAdd: boolean;
   @IsNumber()
+  @IsOptional()
+  level?: AuthLevel;
+}
+
+export class AddMember {
+  @IsString()
   @IsNotEmpty()
-  level: AuthLevel;
+  id: string;
+  @IsStringArray()
+  @IsNotEmpty()
+  userIds: string[];
+  @IsBoolean()
+  @IsNotEmpty()
+  isAdd: boolean;
 }

@@ -5,18 +5,19 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { AddManager, ApplyTeam, JoinTeam } from './dto/team.dto';
+import { AddManager, AddMember, ApplyTeam, JoinTeam } from './dto/team.dto';
 import { AuthLevel, Team } from './entities/team.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { USER_IDENTITY, User } from 'src/user/entities/user.entity';
 import { ChatService } from 'src/chat/chat.service';
-import { ChatType } from 'src/chat/entities/chat.entity';
+import { ChatRoom, ChatType } from 'src/chat/entities/chat.entity';
 
 @Injectable()
 export class TeamService implements OnModuleInit {
   constructor(private chatService: ChatService) {}
   @InjectRepository(Team) private teamRepository: Repository<Team>;
   @InjectRepository(User) private userRepository: Repository<User>;
+  @InjectRepository(ChatRoom) private chatRoomRepository: Repository<ChatRoom>;
 
   async onModuleInit() {
     // const teams = await this.teamRepository.createQueryBuilder().getMany();
@@ -143,7 +144,7 @@ export class TeamService implements OnModuleInit {
         return {
           ...item,
           adminLevel:
-            team.admins?.find((admin) => admin.id === item.id).level || 4,
+            team.admins?.find((admin) => admin.id === item.id)?.level || 4,
         };
       });
     } else {
@@ -158,7 +159,8 @@ export class TeamService implements OnModuleInit {
   }
 
   async addManager(addManager: AddManager, session) {
-    const { id, userId, isAdd, level } = addManager;
+    const { id, userIds, isAdd, level } = addManager;
+    const userIdSet = new Set(userIds);
 
     const team = await this.teamRepository.findOne({
       where: { id },
@@ -169,12 +171,25 @@ export class TeamService implements OnModuleInit {
     this.testTeamAdminLevel(team, session.openid, 3);
 
     let editAdmins = team.admins;
+    const adminMap = new Map();
+
+    editAdmins.forEach((item) => {
+      adminMap.set(item.id, item);
+    });
     if (isAdd) {
-      editAdmins = team.admins.find((item) => item.id === userId)
-        ? team.admins
-        : [...team.admins, { id: userId, level }];
+      userIdSet.forEach((userId) => {
+        if (adminMap.has(userId)) {
+          adminMap.set(userId, { id: userId, level });
+        }
+      });
+      editAdmins = Array.from(adminMap.values());
     } else {
-      editAdmins = editAdmins.filter((admin) => admin.id === userId);
+      userIdSet.forEach((userId) => {
+        if (adminMap.has(userId)) {
+          adminMap.delete(userId);
+        }
+      });
+      editAdmins = Array.from(adminMap.values());
     }
 
     await this.teamRepository
@@ -187,8 +202,9 @@ export class TeamService implements OnModuleInit {
     return { success: true };
   }
 
-  async addMember(addManager: AddManager, session) {
-    const { id, userId, isAdd } = addManager;
+  async addMember(addManager: AddMember, session) {
+    const { id, userIds, isAdd } = addManager;
+    const userIdSet = new Map<string, User>();
 
     const team = await this.teamRepository.findOne({
       where: { id },
@@ -198,9 +214,16 @@ export class TeamService implements OnModuleInit {
     this.testTeam(team, id);
     this.testTeamAdminLevel(team, session.openid, 4);
 
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .whereInIds(userIds)
+      .getMany();
 
-    if (!isAdd && user.groupId !== id) {
+    users.forEach((item) => {
+      userIdSet.set(item.id, item);
+    });
+
+    if (!isAdd && users.find((user) => user.groupId !== id)) {
       throw new HttpException(
         {
           errorno: 1,
@@ -210,12 +233,92 @@ export class TeamService implements OnModuleInit {
       );
     }
 
-    await this.userRepository
-      .createQueryBuilder()
-      .update(User)
-      .set({ groupId: isAdd ? id : null })
-      .where('id=:id', { userId })
-      .execute();
+    const adminMap = new Map();
+
+    team.admins.forEach((item) => {
+      adminMap.set(item.id, item);
+    });
+
+    if (!isAdd) {
+      // 清除管理员权限
+      const editAdmins = team.admins.filter(
+        (admin) => !userIdSet.has(admin.id),
+      );
+
+      await this.teamRepository
+        .createQueryBuilder('team')
+        .update(Team)
+        .set({ admins: editAdmins })
+        .where('team.id = :value', { value: id })
+        .execute();
+
+      // 删除所有群聊聊天房
+      const chatRoomsMap = new Map<number, ChatRoom>();
+      const allChatRooms = await this.chatRoomRepository
+        .createQueryBuilder('chatRoom')
+        .where(`type = ${ChatType.GROUP}`)
+        .getMany();
+
+      allChatRooms.filter((chatRoom) => {
+        const chatRoomChatObjIds = new Set(chatRoom.chatObjIds.split(','));
+        if (userIds.find((user) => chatRoomChatObjIds.has(user))) {
+          chatRoomsMap.set(chatRoom.id, chatRoom);
+          return true;
+        }
+
+        return false;
+      });
+
+      chatRoomsMap.forEach((chatRoom) => {
+        const updatedChatObjIds = chatRoom.chatObjIds
+          .split(',')
+          .filter((id) => !userIdSet.has(id))
+          .join(',');
+
+        this.chatRoomRepository
+          .createQueryBuilder('chatRoom')
+          .update(chatRoom)
+          .set({
+            chatObjIds: updatedChatObjIds,
+          })
+          .where('chatRoom.id = :value', { value: chatRoom.id });
+      });
+
+      userIds.forEach((userId) => {
+        const user = userIdSet.get(userId);
+        const chatGroupsSet = new Set(user.chatGroups.split(','));
+
+        chatGroupsSet.forEach((item) => {
+          if (chatRoomsMap.has(Number(item))) {
+            chatGroupsSet.delete(item);
+          }
+        });
+
+        const newChatGroups = Array.from(chatGroupsSet);
+
+        // 取消成员
+        this.userRepository
+          .createQueryBuilder('user')
+          .update(User)
+          .set({
+            groupId: null,
+            chatGroups: newChatGroups.join(',') + ',',
+          })
+          .where('user.id= :userId', { userId })
+          .execute();
+      });
+    } else {
+      userIds.forEach((userId) => {
+        this.userRepository
+          .createQueryBuilder()
+          .update(User)
+          .set({
+            groupId: id,
+          })
+          .where('user.id= :userId', { userId })
+          .execute();
+      });
+    }
 
     return { success: true };
   }
