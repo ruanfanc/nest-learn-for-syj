@@ -46,4 +46,9 @@ export class TeamController {
   editTeam(@Body() addMember: EditTeam, @Session() session) {
     return this.teamService.createTeam(addMember, session);
   }
+
+  @Get('/detail')
+  detail(@Query('id') id: string, @Session() session) {
+    return this.teamService.detail(id, session);
+  }
 }

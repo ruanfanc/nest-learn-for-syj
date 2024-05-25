@@ -357,6 +357,18 @@ export class TeamService implements OnModuleInit {
     return { success: true };
   }
 
+  async detail(id: string, session: { userInfo: User }) {
+    const teamFinded = await this.teamRepository.findOne({
+      where: { id },
+    });
+
+    return {
+      detail: {
+        ...teamFinded,
+      },
+    };
+  }
+
   testTeam(team, id) {
     if (!team) {
       throw new HttpException(
