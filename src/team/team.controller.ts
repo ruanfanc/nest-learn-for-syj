@@ -1,6 +1,12 @@
 import { Controller, Post, Body, Session, Get, Query } from '@nestjs/common';
 import { TeamService } from './team.service';
-import { JoinTeam, AddManager, ApplyTeam, AddMember } from './dto/team.dto';
+import {
+  JoinTeam,
+  AddManager,
+  ApplyTeam,
+  AddMember,
+  EditTeam,
+} from './dto/team.dto';
 
 @Controller('team')
 export class TeamController {
@@ -34,5 +40,10 @@ export class TeamController {
   @Post('/addMember')
   addMember(@Body() addMember: AddMember, @Session() session) {
     return this.teamService.addMember(addMember, session);
+  }
+
+  @Post('/editTeam')
+  editTeam(@Body() addMember: EditTeam, @Session() session) {
+    return this.teamService.createTeam(addMember, session);
   }
 }

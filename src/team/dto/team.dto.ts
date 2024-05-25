@@ -62,3 +62,15 @@ export class AddMember {
   @IsNotEmpty()
   isAdd: boolean;
 }
+
+export class EditTeam {
+  @IsString()
+  @IsNotEmpty()
+  groupId: string;
+  @IsString()
+  @IsOptional()
+  introduction?: string;
+  @IsString()
+  @IsOptional()
+  avatarUrl?: string;
+}

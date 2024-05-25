@@ -171,12 +171,14 @@ export class UserService {
     const identity = user.identity;
 
     if (identity.includes(USER_IDENTITY.TEACHER)) {
-      await this.teamService.createTeam({
-        groupId: initUse.groupId,
-        userInfo: session.userInfo,
-        avatarUrl: initUse.groupAvatarUrl,
-        introduction: initUse.groupIntroduction,
-      });
+      await this.teamService.createTeam(
+        {
+          groupId: initUse.groupId,
+          avatarUrl: initUse.groupAvatarUrl,
+          introduction: initUse.groupIntroduction,
+        },
+        session.userInfo,
+      );
     } else if (identity.includes(USER_IDENTITY.STUDENT)) {
       if (team) {
         // 加入群聊
@@ -193,12 +195,14 @@ export class UserService {
         });
       } else {
         // 创建群聊
-        await this.teamService.createTeam({
-          groupId: initUse.groupId,
-          userInfo: session.userInfo,
-          avatarUrl: initUse.groupAvatarUrl,
-          introduction: initUse.groupIntroduction,
-        });
+        await this.teamService.createTeam(
+          {
+            groupId: initUse.groupId,
+            avatarUrl: initUse.groupAvatarUrl,
+            introduction: initUse.groupIntroduction,
+          },
+          session.userInfo,
+        );
       }
     }
 

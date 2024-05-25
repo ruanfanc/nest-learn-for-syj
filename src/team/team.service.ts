@@ -115,17 +115,38 @@ export class TeamService implements OnModuleInit {
     return ids;
   }
 
-  async createTeam({
-    groupId,
-    userInfo,
-    introduction,
-    avatarUrl,
-  }: {
-    groupId: string;
-    userInfo: User;
-    introduction?: string;
-    avatarUrl: string;
-  }) {
+  async createTeam(
+    {
+      groupId,
+      introduction,
+      avatarUrl,
+    }: {
+      groupId: string;
+      introduction?: string;
+      avatarUrl?: string;
+    },
+    userInfo: User,
+  ) {
+    const team = this.teamRepository.findOne({
+      where: { id: groupId },
+    });
+
+    if (team) {
+      if (!avatarUrl) {
+        return this.lackOfGroupAvatarUrl();
+      } else {
+        await this.teamRepository
+          .createQueryBuilder('team')
+          .update(Team)
+          .set({
+            introduction,
+            avatarUrl,
+          })
+          .where('team.id=:id', { id: groupId })
+          .execute();
+      }
+    }
+
     await this.teamRepository.save({
       id: groupId,
       admins: [
@@ -374,5 +395,15 @@ export class TeamService implements OnModuleInit {
         HttpStatus.UNAUTHORIZED,
       );
     }
+  }
+
+  lackOfGroupAvatarUrl() {
+    throw new HttpException(
+      {
+        errorno: 655,
+        errormsg: `缺少群头像`,
+      },
+      HttpStatus.OK,
+    );
   }
 }
