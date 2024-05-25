@@ -37,6 +37,14 @@ export class InitUserDto {
   @IsOptional()
   @IsString()
   teacherDegreeLevels: string;
+
+  @IsOptional()
+  @IsString()
+  groupAvatarUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  groupIntroduction?: string;
 }
 
 export class GetUserDto {

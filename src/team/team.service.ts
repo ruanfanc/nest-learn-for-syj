@@ -115,7 +115,17 @@ export class TeamService implements OnModuleInit {
     return ids;
   }
 
-  async createTeam(groupId: string, userInfo: User) {
+  async createTeam({
+    groupId,
+    userInfo,
+    introduction,
+    avatarUrl,
+  }: {
+    groupId: string;
+    userInfo: User;
+    introduction?: string;
+    avatarUrl: string;
+  }) {
     await this.teamRepository.save({
       id: groupId,
       admins: [
@@ -126,6 +136,9 @@ export class TeamService implements OnModuleInit {
             : AuthLevel.LEARDER,
         },
       ],
+      hasTeacher: userInfo.identity.includes(USER_IDENTITY.TEACHER),
+      introduction,
+      avatarUrl,
     });
   }
 

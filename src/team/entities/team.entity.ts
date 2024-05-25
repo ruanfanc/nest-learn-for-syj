@@ -23,4 +23,13 @@ export class Team {
      */
     level: AuthLevel;
   }[];
+
+  @Column('boolean', { name: 'hasTeacher', nullable: true })
+  hasTeacher: boolean;
+
+  @Column('text', { name: 'introduction', nullable: true })
+  introduction: string;
+
+  @Column('text', { name: 'avatarUrl', nullable: true })
+  avatarUrl: string | null;
 }

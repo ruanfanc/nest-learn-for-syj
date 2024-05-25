@@ -8,6 +8,7 @@ import { TeamService } from 'src/team/team.service';
 import { ChatService } from 'src/chat/chat.service';
 import { Team } from 'src/team/entities/team.entity';
 import { ChatType } from 'src/chat/entities/chat.entity';
+import { userInfo } from 'os';
 
 @Injectable()
 export class UserService {
@@ -132,6 +133,22 @@ export class UserService {
     }
   }
   async init(initUse: InitUserDto, session: { userInfo: User }) {
+    let team: Team;
+
+    if (initUse.groupId) {
+      team = await this.teamRepository.findOne({
+        where: { id: initUse.groupId },
+      });
+
+      if (!initUse.groupAvatarUrl) {
+        return this.lackOfGroupAvatarUrl();
+      }
+
+      if (initUse.identity?.includes(USER_IDENTITY.TEACHER) && team) {
+        return this.groupHasExist();
+      }
+    }
+
     await this.userRepository
       .createQueryBuilder()
       .update(User)
@@ -154,22 +171,35 @@ export class UserService {
     const identity = user.identity;
 
     if (identity.includes(USER_IDENTITY.TEACHER)) {
-      await this.teamService.createTeam(initUse.groupId, session.userInfo);
+      await this.teamService.createTeam({
+        groupId: initUse.groupId,
+        userInfo: session.userInfo,
+        avatarUrl: initUse.groupAvatarUrl,
+        introduction: initUse.groupIntroduction,
+      });
     } else if (identity.includes(USER_IDENTITY.STUDENT)) {
-      const team = await this.teamRepository.findOne({
-        where: { id: initUse.groupId },
-      });
-      team.admins.forEach((item) => {
-        this.chatService.sendMessage({
-          from: user.id,
-          to: item.id,
-          type: ChatType.JOIN_TEAM_APPLY,
-          joinTeamApplyInfo: {
-            groupId: initUse.groupId,
-            userId: user.id,
-          },
+      if (team) {
+        // 加入群聊
+        team.admins.forEach((item) => {
+          this.chatService.sendMessage({
+            from: user.id,
+            to: item.id,
+            type: ChatType.JOIN_TEAM_APPLY,
+            joinTeamApplyInfo: {
+              groupId: initUse.groupId,
+              userId: user.id,
+            },
+          });
         });
-      });
+      } else {
+        // 创建群聊
+        await this.teamService.createTeam({
+          groupId: initUse.groupId,
+          userInfo: session.userInfo,
+          avatarUrl: initUse.groupAvatarUrl,
+          introduction: initUse.groupIntroduction,
+        });
+      }
     }
 
     if (user) {
@@ -196,5 +226,25 @@ export class UserService {
     }
 
     return user;
+  }
+
+  lackOfGroupAvatarUrl() {
+    throw new HttpException(
+      {
+        errorno: 654,
+        errormsg: `缺少群头像`,
+      },
+      HttpStatus.OK,
+    );
+  }
+
+  groupHasExist() {
+    throw new HttpException(
+      {
+        errorno: 655,
+        errormsg: `群名已存在`,
+      },
+      HttpStatus.OK,
+    );
   }
 }
