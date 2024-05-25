@@ -7,6 +7,7 @@ import { Response } from './common/response';
 import * as session from 'express-session';
 import { AuthGuard } from './common/guard';
 import sessionMemoryStore from './sessionStore';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,6 +24,8 @@ async function bootstrap() {
       store: sessionMemoryStore,
     }),
   );
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
   app.use(cookieParser('akingYouthLaw'));
   app.useGlobalGuards(new AuthGuard());
   app.useGlobalInterceptors(new Response());
