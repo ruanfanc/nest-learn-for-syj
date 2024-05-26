@@ -8,6 +8,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { join } from 'path';
 import { writeFile } from 'fs/promises';
+import { saveFilePath } from 'src/common/constant';
 
 @Controller('files')
 export class FileController {
@@ -32,7 +33,8 @@ export class FileController {
     }
 
     const filename = `${uuidv4()}.${ext}`;
-    const filePath = join('/www/uploadFiles', filename);
+    // const filePath = join('/www/uploadFiles', filename);
+    const filePath = join(saveFilePath, filename);
     // const filePath = join('/Users/didi/downloads', filename);
 
     await writeFile(filePath, buffer);

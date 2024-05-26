@@ -103,7 +103,7 @@ export class TeamService implements OnModuleInit {
     if (!id) {
       return [];
     }
-    console.log('decodeURIComponent(id): ', decodeURIComponent(id));
+
     const teams = await this.teamRepository
       .createQueryBuilder('team')
       .where('team.id LIKE :query', {

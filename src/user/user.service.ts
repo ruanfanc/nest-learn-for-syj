@@ -144,8 +144,10 @@ export class UserService {
         return this.lackOfGroupAvatarUrl();
       }
 
-      if (initUse.identity?.includes(USER_IDENTITY.TEACHER) && team) {
-        return this.groupHasExist();
+      if (initUse.identity?.includes(USER_IDENTITY.TEACHER)) {
+        if (team) {
+          return this.groupHasExist();
+        }
       }
     }
 
@@ -153,12 +155,12 @@ export class UserService {
       .createQueryBuilder()
       .update(User)
       .set({
-        ...initUse,
+        talent: initUse.talent,
         groupId: initUse.identity?.includes(USER_IDENTITY.TEACHER)
           ? initUse.groupId
           : null,
         identity: initUse.identity.filter(
-          (item) => item !== USER_IDENTITY.MANAGER,
+          (item: USER_IDENTITY) => item !== USER_IDENTITY.MANAGER,
         ),
       })
       .where('id=:id', { id: session.userInfo.id })
@@ -247,6 +249,16 @@ export class UserService {
       {
         errorno: 655,
         errormsg: `群名已存在`,
+      },
+      HttpStatus.OK,
+    );
+  }
+
+  confirmCodeInvalid() {
+    throw new HttpException(
+      {
+        errorno: 656,
+        errormsg: `学历验证码无效！`,
       },
       HttpStatus.OK,
     );

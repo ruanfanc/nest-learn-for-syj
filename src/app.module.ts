@@ -10,6 +10,7 @@ import { SessionModule } from './session/session.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { FileModule } from './file/file.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { saveFilePath } from './common/constant';
 
 @Module({
   imports: [
@@ -31,14 +32,18 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     ChatModule,
     SessionModule,
     FileModule,
-    ServeStaticModule.forRoot({
-      rootPath: '/www/uploadFiles', // 绝对路径
-      serveRoot: '/uploads',
-    }),
+    // ServeStaticModule.forRoot({
+    //   rootPath: '/www/uploadFiles', // 绝对路径
+    //   serveRoot: '/uploads',
+    // }),
     // ServeStaticModule.forRoot({
     //   rootPath: '/Users/didi/downloads', // 绝对路径
     //   serveRoot: '/uploads',
     // }),
+    ServeStaticModule.forRoot({
+      rootPath: saveFilePath, // 绝对路径
+      serveRoot: '/uploads',
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
