@@ -132,76 +132,36 @@ export class UserService {
     }
   }
   async init(initUse: InitUserDto, session: { userInfo: User }) {
-    let team: Team;
-
+    const team = await this.teamRepository.findOne({
+      where: { id: initUse.groupId },
+    });
     if (initUse.groupId) {
-      team = await this.teamRepository.findOne({
-        where: { id: initUse.groupId },
-      });
+      if (initUse.isCreateTeam) {
+        if (!initUse.groupAvatarUrl) {
+          return this.lackOfGroupAvatarUrl();
+        }
 
-      if (!initUse.groupAvatarUrl) {
-        return this.lackOfGroupAvatarUrl();
-      }
-
-      if (initUse.identity?.includes(USER_IDENTITY.TEACHER)) {
-        if (team) {
+        if (initUse.isCreateTeam && team) {
           return this.groupHasExist();
+        }
+      } else {
+        if (!team) {
+          return this.groupNotFound();
         }
       }
     }
 
-    await this.userRepository
-      .createQueryBuilder()
-      .update(User)
-      .set({
-        talent: initUse.talent,
-        groupId: initUse.identity?.includes(USER_IDENTITY.TEACHER)
-          ? initUse.groupId
-          : null,
-        identity: initUse.identity.filter(
-          (item: USER_IDENTITY) => item !== USER_IDENTITY.MANAGER,
-        ),
-      })
-      .where('id=:id', { id: session.userInfo.id })
-      .execute();
-
-    const user = await this.userRepository.findOne({
-      where: { id: session.userInfo.id },
-    });
-
-    const identity = user.identity;
-
-    if (identity.includes(USER_IDENTITY.TEACHER)) {
-      if (initUse.groupId && initUse.groupAvatarUrl) {
-        // 创建群聊
-        await this.teamService.createTeam(
-          {
-            groupId: initUse.groupId,
-            avatarUrl: initUse.groupAvatarUrl,
-            introduction: initUse.groupIntroduction,
-          },
-          session.userInfo,
-        );
-      } else {
-        this.lackOfParams();
-      }
-    } else if (identity.includes(USER_IDENTITY.STUDENT)) {
+    if (initUse.groupId) {
       if (!initUse.isCreateTeam) {
-        if (team) {
-          return this.groupHasExist();
-        }
-        if (!initUse.groupId) {
-          return this.lackOfParams();
-        }
         // 加入群聊
         team.admins.forEach((item) => {
           this.chatService.sendMessage({
-            from: user.id,
+            from: session.userInfo.id,
             to: item.id,
             type: ChatType.JOIN_TEAM_APPLY,
             joinTeamApplyInfo: {
               groupId: initUse.groupId,
-              userId: user.id,
+              userId: session.userInfo.id,
             },
           });
         });
@@ -221,6 +181,23 @@ export class UserService {
         }
       }
     }
+
+    await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        talent: initUse.talent,
+        groupId: initUse.isCreateTeam ? initUse.groupId : null,
+        identity: initUse.identity.filter(
+          (item: USER_IDENTITY) => item !== USER_IDENTITY.MANAGER,
+        ),
+      })
+      .where('id=:id', { id: session.userInfo.id })
+      .execute();
+
+    const user = await this.userRepository.findOne({
+      where: { id: session.userInfo.id },
+    });
 
     if (user) {
       session.userInfo = user;
@@ -263,6 +240,16 @@ export class UserService {
       {
         errorno: 655,
         errormsg: `群名已存在`,
+      },
+      HttpStatus.OK,
+    );
+  }
+
+  groupNotFound() {
+    throw new HttpException(
+      {
+        errorno: 666,
+        errormsg: `未找到该群名`,
       },
       HttpStatus.OK,
     );

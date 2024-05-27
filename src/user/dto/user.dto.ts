@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { IsNumberArray } from 'src/common';
 
 export class CreateUserDto {
@@ -47,7 +47,7 @@ export class InitUserDto {
   groupIntroduction?: string;
 
   @IsOptional()
-  @IsString()
+  @IsBoolean()
   isCreateTeam?: boolean;
 }
 
