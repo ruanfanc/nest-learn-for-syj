@@ -74,12 +74,7 @@ export class TeamService implements OnModuleInit {
         },
       });
 
-      await this.userRepository
-        .createQueryBuilder()
-        .update(User)
-        .set({ groupId })
-        .where('id=:id', { id: userId })
-        .execute();
+      this.joinTeam({ groupId }, targetUser);
     }
     return { success: true };
   }
@@ -152,15 +147,99 @@ export class TeamService implements OnModuleInit {
       admins: [
         {
           id: userInfo.id,
-          level: userInfo.identity.includes(USER_IDENTITY.TEACHER)
-            ? AuthLevel.TEACHER
-            : AuthLevel.LEARDER,
+          level: AuthLevel.TEACHER,
         },
       ],
       hasTeacher: userInfo.identity.includes(USER_IDENTITY.TEACHER),
       introduction,
       avatarUrl,
     });
+  }
+
+  async exitTeam(userInfo: User) {
+    const originTeam = await this.teamRepository.findOne({
+      where: { id: userInfo.groupId },
+    });
+
+    if (
+      originTeam.admins.find((item) => item.id === userInfo.id)?.level ===
+      AuthLevel.TEACHER
+    ) {
+      throw new HttpException(
+        {
+          errorno: 689,
+          errormsg: `队长暂不能退出团队`,
+        },
+        HttpStatus.OK,
+      );
+    }
+
+    const curChatGroups = userInfo.chatGroups.split(',');
+
+    const chatGroups = await this.chatRoomRepository
+      .createQueryBuilder('chatRoom')
+      .where(`chatRoom.type = 5`)
+      .whereInIds(curChatGroups)
+      .getMany();
+
+    chatGroups.forEach((chat) => {
+      this.chatRoomRepository
+        .createQueryBuilder()
+        .update(ChatRoom)
+        .set({
+          chatObjIds: chat.chatObjIds
+            .split(',')
+            .filter((item) => item !== userInfo.id)
+            .join(','),
+        })
+        .where('id=:id', { id: userInfo.id })
+        .execute();
+    });
+
+    const chatGroupsSet = new Set(chatGroups.map((item) => item.id));
+
+    if (originTeam) {
+      await this.teamRepository
+        .createQueryBuilder('team')
+        .update(Team)
+        .set({
+          admins: originTeam.admins.filter((item) => item.id !== userInfo.id),
+        })
+        .where('team.id=:value', { value: userInfo.groupId })
+        .execute();
+    }
+
+    await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({
+        groupId: null,
+        chatGroups: curChatGroups
+          .filter((item) => !chatGroupsSet.has(Number(item)))
+          .join(','),
+      })
+      .where('id=:id', { id: userInfo.id })
+      .execute();
+  }
+
+  async joinTeam({ groupId }: { groupId: string }, userInfo: User) {
+    if (userInfo.identity.includes(USER_IDENTITY.TEACHER)) {
+      await this.teamRepository
+        .createQueryBuilder('team')
+        .update(Team)
+        .set({
+          hasTeacher: true,
+        })
+        .where('team.id=:value', { value: groupId })
+        .execute();
+    }
+
+    await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({ groupId })
+      .where('id=:id', { id: userInfo.id })
+      .execute();
   }
 
   async members(id: string) {
@@ -173,7 +252,7 @@ export class TeamService implements OnModuleInit {
       where: { id },
     });
 
-    if (members.length > 0) {
+    if (members.length > 0 && team) {
       return members.map((item) => {
         return {
           ...item,

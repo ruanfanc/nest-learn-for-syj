@@ -47,6 +47,11 @@ export class TeamController {
     return this.teamService.createTeam(addMember, session);
   }
 
+  @Post('/exitTeam')
+  exitTeam(@Body() addMember: object, @Session() session) {
+    return this.teamService.exitTeam(session.userInfo);
+  }
+
   @Get('/detail')
   detail(@Query('id') id: string, @Session() session) {
     return this.teamService.detail(id, session);

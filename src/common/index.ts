@@ -1,7 +1,7 @@
 import { registerDecorator } from 'class-validator';
 
 export function IsNumberArray() {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'IsNumberArray',
       target: object.constructor,
@@ -21,7 +21,7 @@ export function IsNumberArray() {
 }
 
 export function IsStringArray() {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'IsStringArray',
       target: object.constructor,
