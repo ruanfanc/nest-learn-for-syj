@@ -8,7 +8,6 @@ import { TeamService } from 'src/team/team.service';
 import { ChatService } from 'src/chat/chat.service';
 import { Team } from 'src/team/entities/team.entity';
 import { ChatType } from 'src/chat/entities/chat.entity';
-import { userInfo } from 'os';
 
 @Injectable()
 export class UserService {
@@ -173,16 +172,27 @@ export class UserService {
     const identity = user.identity;
 
     if (identity.includes(USER_IDENTITY.TEACHER)) {
-      await this.teamService.createTeam(
-        {
-          groupId: initUse.groupId,
-          avatarUrl: initUse.groupAvatarUrl,
-          introduction: initUse.groupIntroduction,
-        },
-        session.userInfo,
-      );
+      if (initUse.groupId && initUse.groupAvatarUrl) {
+        // 创建群聊
+        await this.teamService.createTeam(
+          {
+            groupId: initUse.groupId,
+            avatarUrl: initUse.groupAvatarUrl,
+            introduction: initUse.groupIntroduction,
+          },
+          session.userInfo,
+        );
+      } else {
+        this.lackOfParams();
+      }
     } else if (identity.includes(USER_IDENTITY.STUDENT)) {
-      if (team) {
+      if (!initUse.isCreateTeam) {
+        if (team) {
+          return this.groupHasExist();
+        }
+        if (!initUse.groupId) {
+          return this.lackOfParams();
+        }
         // 加入群聊
         team.admins.forEach((item) => {
           this.chatService.sendMessage({
@@ -196,15 +206,19 @@ export class UserService {
           });
         });
       } else {
-        // 创建群聊
-        await this.teamService.createTeam(
-          {
-            groupId: initUse.groupId,
-            avatarUrl: initUse.groupAvatarUrl,
-            introduction: initUse.groupIntroduction,
-          },
-          session.userInfo,
-        );
+        if (initUse.groupId && initUse.groupAvatarUrl) {
+          // 创建群聊
+          await this.teamService.createTeam(
+            {
+              groupId: initUse.groupId,
+              avatarUrl: initUse.groupAvatarUrl,
+              introduction: initUse.groupIntroduction,
+            },
+            session.userInfo,
+          );
+        } else {
+          this.lackOfParams();
+        }
       }
     }
 
@@ -249,6 +263,16 @@ export class UserService {
       {
         errorno: 655,
         errormsg: `群名已存在`,
+      },
+      HttpStatus.OK,
+    );
+  }
+
+  lackOfParams() {
+    throw new HttpException(
+      {
+        errorno: 657,
+        errormsg: `缺少关键信息`,
       },
       HttpStatus.OK,
     );

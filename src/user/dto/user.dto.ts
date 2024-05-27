@@ -45,6 +45,10 @@ export class InitUserDto {
   @IsOptional()
   @IsString()
   groupIntroduction?: string;
+
+  @IsOptional()
+  @IsString()
+  isCreateTeam?: boolean;
 }
 
 export class GetUserDto {
