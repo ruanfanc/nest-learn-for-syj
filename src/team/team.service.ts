@@ -213,7 +213,6 @@ export class TeamService implements OnModuleInit {
     });
 
     const chatGroupsSet = new Set(chatGroups.map((item) => item.id));
-    console.log('chatGroups: ', chatGroupsSet);
 
     if (originTeam) {
       await this.teamRepository
