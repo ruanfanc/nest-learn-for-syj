@@ -9,6 +9,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import axios from 'axios';
 import * as dayjs from 'dayjs';
 import { ChatGateway } from './chat.gateway';
+import { Team } from 'src/team/entities/team.entity';
 
 @Injectable()
 export class ChatService {
@@ -18,6 +19,7 @@ export class ChatService {
   @InjectRepository(ChatRoom) private chatRoomRepository: Repository<ChatRoom>;
   @InjectRepository(User) private userRepository: Repository<User>;
   @InjectRepository(Case) private casesRepository: Repository<Case>;
+  @InjectRepository(Team) private teamRepository: Repository<Team>;
 
   async sendMessage({
     from,
@@ -162,6 +164,10 @@ export class ChatService {
           })
           .getMany();
 
+        const team = await this.teamRepository.findOne({
+          where: { id: publicAgreeHandleInfo.groupId },
+        });
+
         const caseDetail = await this.casesRepository.findOne({
           where: { id: publicAgreeHandleInfo.caseId },
         });
@@ -170,10 +176,7 @@ export class ChatService {
           chatObjIds: [user.id, ...teamMates.map((item) => item.id)].join(','),
           chatRoomName: caseDetail.title,
           type: ChatType.GROUP,
-          chatObjAvatarUrl: [
-            user.avatarUrl,
-            ...teamMates.map((item) => item.avatarUrl),
-          ],
+          chatObjAvatarUrl: [team.avatarUrl],
         } as unknown as ChatRoom);
         break;
       }
