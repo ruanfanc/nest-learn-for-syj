@@ -67,28 +67,22 @@ export class UserService {
     const { openid } = data.data;
 
     if (nickName && avatarUrl) {
-      const user = await this.userRepository.findOne({
-        where: { id: openid },
-      });
+      const count = await this.userRepository
+        .createQueryBuilder('user')
+        .where('user.nickName = :nickName', { nickName })
+        .getCount();
 
-      if (!user) {
-        const count = await this.userRepository
-          .createQueryBuilder('user')
-          .where('user.nickName = :nickName', { nickName })
-          .getCount();
-
-        if (count !== 0) {
-          throw new HttpException(
-            {
-              errorno: 12,
-              errormsg: '名字重复',
-              data: {
-                success: false,
-              },
+      if (count !== 0) {
+        throw new HttpException(
+          {
+            errorno: 12,
+            errormsg: '名字重复',
+            data: {
+              success: false,
             },
-            HttpStatus.OK,
-          );
-        }
+          },
+          HttpStatus.OK,
+        );
       }
       session.openid = openid;
       session.authenticated = true;

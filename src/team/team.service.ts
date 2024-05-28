@@ -161,16 +161,32 @@ export class TeamService implements OnModuleInit {
       where: { id: userInfo.groupId },
     });
 
-    if (
+    const isCreater =
       originTeam.admins.find((item) => item.id === userInfo.id)?.level ===
-      AuthLevel.TEACHER
-    ) {
-      throw new HttpException(
-        {
-          errorno: 689,
-          errormsg: `队长暂不能退出团队`,
-        },
-        HttpStatus.OK,
+      AuthLevel.TEACHER;
+
+    if (isCreater) {
+      const teamMates = await this.userRepository
+        .createQueryBuilder('user')
+        .where('user.groupId = :value', {
+          value: userInfo.groupId,
+        })
+        .getMany();
+
+      await Promise.allSettled(
+        teamMates.map(
+          (item) =>
+            new Promise<void>((resolve) => {
+              {
+                if (item.groupId !== userInfo.groupId) {
+                  return this.exitTeam(item).finally(() => {
+                    resolve();
+                  });
+                }
+                return resolve();
+              }
+            }),
+        ),
       );
     }
 
@@ -192,11 +208,12 @@ export class TeamService implements OnModuleInit {
             .filter((item) => item !== userInfo.id)
             .join(','),
         })
-        .where('id=:id', { id: userInfo.id })
+        .where('id=:id', { id: chat.id })
         .execute();
     });
 
     const chatGroupsSet = new Set(chatGroups.map((item) => item.id));
+    console.log('chatGroups: ', chatGroupsSet);
 
     if (originTeam) {
       await this.teamRepository
@@ -220,6 +237,16 @@ export class TeamService implements OnModuleInit {
       })
       .where('id=:id', { id: userInfo.id })
       .execute();
+
+    if (isCreater) {
+      this.teamRepository
+        .delete({
+          id: userInfo.groupId,
+        })
+        .then((res) => {
+          console.log('delete team', userInfo.groupId, res.raw);
+        });
+    }
   }
 
   async joinTeam({ groupId }: { groupId: string }, userInfo: User) {
@@ -291,9 +318,7 @@ export class TeamService implements OnModuleInit {
     });
     if (isAdd) {
       userIdSet.forEach((userId) => {
-        if (adminMap.has(userId)) {
-          adminMap.set(userId, { id: userId, level });
-        }
+        adminMap.set(userId, { id: userId, level });
       });
       editAdmins = Array.from(adminMap.values());
     } else {
