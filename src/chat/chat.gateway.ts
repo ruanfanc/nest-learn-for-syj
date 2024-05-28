@@ -307,7 +307,7 @@ export class ChatGateway {
       .where(
         'chatRoom.isWaitingConfirmInfo = 1 AND FIND_IN_SET(:id, chatRoom.chatObjIds)',
         {
-          id: client.data.openid,
+          id: openId,
         },
       )
       .getMany();
