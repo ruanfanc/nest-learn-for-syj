@@ -49,7 +49,7 @@ export class ChatGateway {
       const socketBefore = this.sessionService.findSession(query.id as string);
       // 已有的socket要断开
       if (socketBefore) {
-        clearInterval(socketBefore.heartbeatInterval);
+        clearInterval(socketBefore?.heartbeatInterval);
         this.sessionService.deleteSession(query.id as string);
       }
 

@@ -150,7 +150,7 @@ export class TeamService implements OnModuleInit {
           level: AuthLevel.TEACHER,
         },
       ],
-      hasTeacher: userInfo.identity.includes(USER_IDENTITY.TEACHER),
+      hasTeacher: !!userInfo.identity?.includes(USER_IDENTITY.TEACHER),
       introduction,
       avatarUrl,
     });

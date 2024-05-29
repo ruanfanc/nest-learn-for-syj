@@ -168,7 +168,12 @@ export class UserService {
               avatarUrl: initUse.groupAvatarUrl,
               introduction: initUse.groupIntroduction,
             },
-            session.userInfo,
+            {
+              ...session.userInfo,
+              identity: session.userInfo?.identity?.length
+                ? session.userInfo?.identity
+                : initUse.identity,
+            },
           );
         } else {
           this.lackOfParams();
