@@ -151,9 +151,13 @@ export class ChatGateway {
 
       // 群发
       chatRoomFinded.chatObjIds.split(',').forEach((item) => {
-        this.emitClientSocket(item)?.emit('room-message-receive', {
-          [chatRoomId]: newMessage,
-        });
+        const socketIdObj = this.sessionService.sessions.get(item);
+        if (socketIdObj && socketIdObj.isActive) {
+          this.emitClientSocket(item)?.emit('room-message-receive', {
+            [chatRoomId]: newMessage,
+          });
+          this.newMessagesPreviewList({ userId: item } as any);
+        }
       });
     }
   }
