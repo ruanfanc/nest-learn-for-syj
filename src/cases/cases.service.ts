@@ -298,24 +298,72 @@ export class CasesService {
     const caseById = await this.caseRepository.findOne({
       where: { id: caseId },
     });
-    if (!caseById) {
-      return this.noCaseError(caseId);
-    }
-    const team = await this.teamRepository.findOne({
-      where: { id: session.userInfo.groupId },
-    });
-    if (!team.admins?.find((item) => item.id === session.userInfo.id)) {
-      return this.noAuth();
-    }
 
-    if (isHandle) {
+    if (groupId) {
+      if (!caseById) {
+        return this.noCaseError(caseId);
+      }
+      const team = await this.teamRepository.findOne({
+        where: { id: session.userInfo.groupId },
+      });
+      if (!team.admins?.find((item) => item.id === session.userInfo.id)) {
+        return this.noAuth();
+      }
+
+      if (isHandle) {
+        this.chatService.sendMessage({
+          from: session.userInfo.id,
+          to: caseById.userId,
+          type: ChatType.TEAM_HANLDE_CASE,
+          teamHanldeCaseInfo: {
+            groupId: groupId,
+            caseId: caseId,
+          },
+        });
+
+        await this.caseRepository
+          .createQueryBuilder()
+          .update(Case)
+          .set({
+            pendingRelateGroup: Array.from(
+              new Set([...(caseById.pendingRelateGroup || []), groupId]),
+            ),
+          })
+          .where('id=:id', { id: caseId })
+          .execute();
+      } else {
+        if (caseById.relateGroup === groupId) {
+          await this.caseRepository
+            .createQueryBuilder()
+            .update(Case)
+            .set({
+              relateGroup: null,
+              status: CASE_STATUS.WAITTING,
+            })
+            .where('id=:id', { id: caseId })
+            .execute();
+        } else {
+          await this.caseRepository
+            .createQueryBuilder()
+            .update(Case)
+            .set({
+              pendingRelateGroup: caseById.pendingRelateGroup.filter(
+                (item) => item !== groupId,
+              ),
+            })
+            .where('id=:id', { id: caseId })
+            .execute();
+        }
+      }
+      return { success: true };
+    } else if (caseById.userId === session.userInfo.id) {
       this.chatService.sendMessage({
         from: session.userInfo.id,
         to: caseById.userId,
-        type: ChatType.TEAM_HANLDE_CASE,
-        teamHanldeCaseInfo: {
-          groupId: groupId,
-          caseId: caseId,
+        type: ChatType.PEOPLE_ENTRUST_GROUP_CASE,
+        peopleEntrustGroupCase: {
+          caseId: caseById.id,
+          userName: session.userInfo.nickName,
         },
       });
 
@@ -329,31 +377,20 @@ export class CasesService {
         })
         .where('id=:id', { id: caseId })
         .execute();
+
+      return { success: true };
     } else {
-      if (caseById.relateGroup === groupId) {
-        await this.caseRepository
-          .createQueryBuilder()
-          .update(Case)
-          .set({
-            relateGroup: null,
-            status: CASE_STATUS.WAITTING,
-          })
-          .where('id=:id', { id: caseId })
-          .execute();
-      } else {
-        await this.caseRepository
-          .createQueryBuilder()
-          .update(Case)
-          .set({
-            pendingRelateGroup: caseById.pendingRelateGroup.filter(
-              (item) => item !== groupId,
-            ),
-          })
-          .where('id=:id', { id: caseId })
-          .execute();
-      }
+      throw new HttpException(
+        {
+          errorno: 39,
+          errormsg: '无权限',
+          data: {
+            success: false,
+          },
+        },
+        HttpStatus.OK,
+      );
     }
-    return { success: true };
   }
 
   async agreeHandle(
@@ -367,16 +404,41 @@ export class CasesService {
       return this.noCaseError(caseId);
     }
 
-    if (caseById.userId !== session.userInfo.id) {
-      return this.noAuth();
-    }
-
     if (caseById.relateGroup) {
       return this.caseHasGroup();
     }
 
     if (!caseById.pendingRelateGroup.includes(groupId)) {
       return this.groupHasGiveUp();
+    }
+
+    if (caseById.userId !== session.userInfo.id) {
+      if (
+        session.userInfo.groupId &&
+        caseById.pendingRelateGroup.includes(session.userInfo.groupId)
+      ) {
+        this.chatService.sendMessage({
+          from: session.userInfo.id,
+          type: ChatType.GROUP_AGREE_PEOPLE_ENTRUST_CASE,
+          groupAgreePeopleEntrustCase: {
+            caseId: caseId,
+            groupId: groupId,
+          },
+        });
+
+        await this.caseRepository
+          .createQueryBuilder()
+          .update(Case)
+          .set({
+            pendingRelateGroup: [],
+            relateGroup: groupId,
+            status: CASE_STATUS.PROCESSING,
+          })
+          .where('id=:id', { id: caseId })
+          .execute();
+        return { success: true };
+      }
+      return this.noAuth();
     }
 
     this.chatService.sendMessage({
@@ -415,6 +477,15 @@ export class CasesService {
     if (!team.admins?.find((item) => item.id === session.userInfo.id)) {
       return this.noAuth();
     }
+
+    await this.teamRepository
+      .createQueryBuilder()
+      .update(Team)
+      .set({
+        completedCaseCount: team.completedCaseCount + 1,
+      })
+      .where(`id = ${team.id}`)
+      .execute();
 
     this.chatService.sendMessage({
       from: session.userInfo.id,
