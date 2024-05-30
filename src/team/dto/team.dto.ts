@@ -74,3 +74,15 @@ export class EditTeam {
   @IsOptional()
   avatarUrl?: string;
 }
+
+export class PreviewlistDto {
+  @IsNotEmpty()
+  @IsNumber()
+  pageNo: number;
+  @IsNotEmpty()
+  @IsNumber()
+  pageSize: number;
+  @IsOptional()
+  @IsString()
+  groupId: string;
+}

@@ -6,6 +6,7 @@ import {
   ApplyTeam,
   AddMember,
   EditTeam,
+  PreviewlistDto,
 } from './dto/team.dto';
 
 @Controller('team')
@@ -55,5 +56,10 @@ export class TeamController {
   @Get('/detail')
   detail(@Query('id') id: string, @Session() session) {
     return this.teamService.detail(id, session);
+  }
+
+  @Post('/previewlist')
+  previewlist(@Body() listBody: PreviewlistDto, @Session() session) {
+    return this.teamService.findAll(listBody, session);
   }
 }

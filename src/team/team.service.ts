@@ -5,7 +5,13 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { AddManager, AddMember, ApplyTeam, JoinTeam } from './dto/team.dto';
+import {
+  AddManager,
+  AddMember,
+  ApplyTeam,
+  JoinTeam,
+  PreviewlistDto,
+} from './dto/team.dto';
 import { AuthLevel, Team } from './entities/team.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { USER_IDENTITY, User } from 'src/user/entities/user.entity';
@@ -104,6 +110,7 @@ export class TeamService implements OnModuleInit {
       .where('team.id LIKE :query', {
         query: `%${decodeURIComponent(id)}%`,
       })
+      .take(10)
       .getRawMany();
 
     const ids = teams.map((team) => team.team_id);
@@ -469,6 +476,30 @@ export class TeamService implements OnModuleInit {
       detail: {
         ...teamFinded,
       },
+    };
+  }
+
+  async findAll(
+    { pageNo, pageSize, groupId }: PreviewlistDto,
+    session: { userInfo: User },
+  ) {
+    const skip = (pageNo - 1) * pageSize;
+    let query = this.teamRepository.createQueryBuilder('team');
+
+    if (groupId) {
+      query = query.where(`team.id = ${groupId}`);
+    }
+
+    const [data, total] = await this.teamRepository
+      .createQueryBuilder('team')
+      .orderBy('case.createTime', 'DESC')
+      .skip(skip)
+      .take(pageSize)
+      .getManyAndCount();
+
+    return {
+      teams: data,
+      total,
     };
   }
 

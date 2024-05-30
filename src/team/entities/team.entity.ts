@@ -32,4 +32,7 @@ export class Team {
 
   @Column('text', { name: 'avatarUrl', nullable: true })
   avatarUrl: string | null;
+
+  @Column('int', { name: 'completedCaseCount', nullable: true, default: 0 })
+  completedCaseCount: number;
 }
