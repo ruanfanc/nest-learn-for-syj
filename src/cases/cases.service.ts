@@ -93,6 +93,9 @@ export class CasesService {
           if (caseFinded.status === CASE_STATUS.PROCESSING) {
             buttons.push(3);
           }
+          if (caseFinded.status === CASE_STATUS.WAITTING) {
+            buttons.push(9);
+          }
         } else {
           // ============== 详谈 ===================
           buttons.push(2);

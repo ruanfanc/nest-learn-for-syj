@@ -37,6 +37,9 @@ export class HandlepCaseDto {
   @IsNotEmpty()
   @IsBoolean()
   isHandle: boolean;
+  @IsOptional()
+  @IsString()
+  groupId: string;
 }
 
 export class CompleteCaseDto {
