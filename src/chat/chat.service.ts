@@ -31,6 +31,8 @@ export class ChatService {
     agreeJoinTeamApplyInfo,
     groupApplyCompleteCaseInfo,
     caseBeAgreededCompleteInfo,
+    groupAgreePeopleEntrustCase,
+    peopleEntrustGroupCase,
   }: {
     from: string;
     to?: string;
@@ -57,6 +59,14 @@ export class ChatService {
     };
     caseBeAgreededCompleteInfo?: {
       caseId: number;
+    };
+    peopleEntrustGroupCase?: {
+      caseId: number;
+      userName: string;
+    };
+    groupAgreePeopleEntrustCase?: {
+      caseId: number;
+      groupId: string;
     };
   }) {
     let user: User;
@@ -278,6 +288,92 @@ export class ChatService {
         } as unknown as ChatRoom);
         break;
       }
+      case ChatType.PEOPLE_ENTRUST_GROUP_CASE: {
+        if (!peopleEntrustGroupCase) {
+          throw new HttpException(
+            {
+              errorno: 28,
+              errormsg: '缺少peopleEntrustGroupCase',
+              data: {
+                success: false,
+              },
+            },
+            HttpStatus.OK,
+          );
+        }
+
+        user = await this.userRepository.findOne({
+          where: { id: from },
+        });
+
+        const group = await this.teamRepository.findOne({
+          where: { id: user.groupId },
+        });
+
+        if (!group) {
+          throw new HttpException(
+            {
+              errorno: 31,
+              errormsg: '用户无所属团队',
+              data: {
+                success: false,
+              },
+            },
+            HttpStatus.OK,
+          );
+        }
+
+        teamMates = await this.userRepository
+          .createQueryBuilder()
+          .whereInIds(group.admins?.map((item) => item.id) || [])
+          .getMany();
+
+        const caseDetail = await this.casesRepository.findOne({
+          where: { id: peopleEntrustGroupCase.caseId },
+        });
+
+        chatRoom = await this.chatRoomRepository.save({
+          chatObjIds: to,
+          chatRoomName: `${user.nickName}希望您受理案件：${caseDetail.title}`,
+          type,
+          peopleEntrustGroupCase,
+          chatObjAvatarUrl: [user.avatarUrl],
+          isWaitingConfirmInfo: true,
+        } as unknown as ChatRoom);
+        break;
+      }
+      case ChatType.GROUP_AGREE_PEOPLE_ENTRUST_CASE: {
+        if (!groupAgreePeopleEntrustCase) {
+          throw new HttpException(
+            {
+              errorno: 29,
+              errormsg: '缺少groupAgreePeopleEntrustCase',
+              data: {
+                success: false,
+              },
+            },
+            HttpStatus.OK,
+          );
+        }
+
+        user = await this.userRepository.findOne({
+          where: { id: from },
+        });
+
+        const caseDetail = await this.casesRepository.findOne({
+          where: { id: groupAgreePeopleEntrustCase.caseId },
+        });
+
+        chatRoom = await this.chatRoomRepository.save({
+          chatObjIds: to,
+          chatRoomName: `${user.nickName}同意受理案件：${caseDetail.title}`,
+          type,
+          groupAgreePeopleEntrustCase,
+          chatObjAvatarUrl: [user.avatarUrl],
+          isWaitingConfirmInfo: true,
+        } as unknown as ChatRoom);
+        break;
+      }
       default:
         break;
     }
@@ -315,6 +411,25 @@ export class ChatService {
           userId: item.id,
         } as any);
       });
+    } else if (type === ChatType.PEOPLE_ENTRUST_GROUP_CASE) {
+      teamMates.forEach(async (item) => {
+        await this.userRepository
+          .createQueryBuilder('user')
+          .update(User)
+          .set({
+            chatGroups: () => joinStringSet('user.chatGroups', chatRoom.id),
+          })
+          .where('id=:id', { id: item.id })
+          .execute();
+
+        this.chatGateway.newMessagesPreviewList({
+          userId: item.id,
+        } as any);
+      });
+    } else if (to) {
+      this.chatGateway.newMessagesPreviewList({
+        userId: to,
+      } as any);
     }
   }
 

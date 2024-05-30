@@ -14,6 +14,8 @@ export enum ChatType {
   AGREE_JOIN_TEAM_APPLY = 6,
   GROUP_APPLY_COMPLETE_CASE = 7,
   CASE_BE_AGREEDED_COMPLETE = 8,
+  PEOPLE_ENTRUST_GROUP_CASE = 9,
+  GROUP_AGREE_PEOPLE_ENTRUST_CASE = 10,
 }
 
 @Entity('message', { schema: 'younglaw' })
@@ -100,6 +102,18 @@ export class ChatRoom {
   @Column('json', { name: 'caseBeAgreededCompleteInfo', nullable: true })
   caseBeAgreededCompleteInfo?: {
     caseId: number;
+  };
+
+  @Column('json', { name: 'peopleEntrustGroupCase', nullable: true })
+  peopleEntrustGroupCase?: {
+    caseId: number;
+    userName: string;
+  };
+
+  @Column('json', { name: 'groupAgreePeopleEntrustCase', nullable: true })
+  groupAgreePeopleEntrustCase?: {
+    caseId: number;
+    groupID: string;
   };
 }
 
