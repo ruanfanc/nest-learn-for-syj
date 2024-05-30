@@ -236,12 +236,16 @@ export class CasesService {
         ? ` OR status = ${CASE_STATUS.WAIT_FOR_AUDIT}`
         : '';
 
+      const relateGroupsSql = session.userInfo.groupId
+        ? ' OR case.relateGroup = :groupId OR JSON_CONTAINS(case.pendingRelateGroup, :value)'
+        : '';
+
       query = query.where(
-        `(case.userId = :userId OR case.relateGroup = :groupId OR JSON_CONTAINS(case.pendingRelateGroup, :value))${managerSql}`,
+        `(case.userId = :userId${relateGroupsSql}${managerSql})`,
         {
           userId: session.userInfo.id,
           groupId: session.userInfo.groupId,
-          value: JSON.stringify(session.userInfo.groupId),
+          value: session.userInfo.groupId || '',
         },
       );
     } else {
