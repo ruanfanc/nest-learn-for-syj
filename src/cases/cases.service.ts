@@ -291,15 +291,15 @@ export class CasesService {
   }
 
   async handle(
-    { caseId, isHandle }: HandlepCaseDto,
+    { caseId, isHandle, groupId }: HandlepCaseDto,
     session: { userInfo: User },
   ) {
-    const groupId = session.userInfo.groupId;
+    const userGroupId = session.userInfo.groupId;
     const caseById = await this.caseRepository.findOne({
       where: { id: caseId },
     });
 
-    if (groupId) {
+    if (userGroupId) {
       if (!caseById) {
         return this.noCaseError(caseId);
       }
@@ -326,7 +326,11 @@ export class CasesService {
           .update(Case)
           .set({
             pendingRelateGroup: Array.from(
-              new Set([...(caseById.pendingRelateGroup || []), groupId]),
+              new Set(
+                [...(caseById.pendingRelateGroup || []), groupId].filter(
+                  (item) => item,
+                ),
+              ),
             ),
           })
           .where('id=:id', { id: caseId })
@@ -359,23 +363,26 @@ export class CasesService {
     } else if (caseById.userId === session.userInfo.id) {
       this.chatService.sendMessage({
         from: session.userInfo.id,
-        to: caseById.userId,
         type: ChatType.PEOPLE_ENTRUST_GROUP_CASE,
         peopleEntrustGroupCase: {
           caseId: caseById.id,
-          userName: session.userInfo.nickName,
+          groupId,
         },
       });
 
       await this.caseRepository
-        .createQueryBuilder()
+        .createQueryBuilder('cases')
         .update(Case)
         .set({
           pendingRelateGroup: Array.from(
-            new Set([...(caseById.pendingRelateGroup || []), groupId]),
+            new Set(
+              [...(caseById.pendingRelateGroup || []), groupId].filter(
+                (item) => item,
+              ),
+            ),
           ),
         })
-        .where('id=:id', { id: caseId })
+        .where(`cases.id = ${caseId}`, { id: caseId })
         .execute();
 
       return { success: true };
@@ -419,6 +426,7 @@ export class CasesService {
       ) {
         this.chatService.sendMessage({
           from: session.userInfo.id,
+          to: caseById.userId,
           type: ChatType.GROUP_AGREE_PEOPLE_ENTRUST_CASE,
           groupAgreePeopleEntrustCase: {
             caseId: caseId,
