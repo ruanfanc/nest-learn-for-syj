@@ -62,7 +62,7 @@ export class ChatService {
     };
     peopleEntrustGroupCase?: {
       caseId: number;
-      userName: string;
+      groupId: string;
     };
     groupAgreePeopleEntrustCase?: {
       caseId: number;
@@ -307,7 +307,7 @@ export class ChatService {
         });
 
         const group = await this.teamRepository.findOne({
-          where: { id: user.groupId },
+          where: { id: peopleEntrustGroupCase.groupId },
         });
 
         if (!group) {
@@ -332,14 +332,30 @@ export class ChatService {
           where: { id: peopleEntrustGroupCase.caseId },
         });
 
-        chatRoom = await this.chatRoomRepository.save({
-          chatObjIds: to,
-          chatRoomName: `${user.nickName}希望您受理案件：${caseDetail.title}`,
-          type,
-          peopleEntrustGroupCase,
-          chatObjAvatarUrl: [user.avatarUrl],
-          isWaitingConfirmInfo: true,
-        } as unknown as ChatRoom);
+        teamMates.forEach(async (item) => {
+          const curChatRoom = await this.chatRoomRepository.save({
+            chatObjIds: item.id,
+            chatRoomName: `${user.nickName}希望您受理案件：${caseDetail.title}`,
+            type,
+            peopleEntrustGroupCase,
+            chatObjAvatarUrl: [user.avatarUrl],
+            isWaitingConfirmInfo: true,
+          } as unknown as ChatRoom);
+
+          await this.userRepository
+            .createQueryBuilder('user')
+            .update(User)
+            .set({
+              chatGroups: () =>
+                joinStringSet('user.chatGroups', curChatRoom.id),
+            })
+            .where('id=:id', { id: item.id })
+            .execute();
+
+          this.chatGateway.newMessagesPreviewList({
+            userId: item.id,
+          } as any);
+        });
         break;
       }
       case ChatType.GROUP_AGREE_PEOPLE_ENTRUST_CASE: {
@@ -412,20 +428,6 @@ export class ChatService {
         } as any);
       });
     } else if (type === ChatType.PEOPLE_ENTRUST_GROUP_CASE) {
-      teamMates.forEach(async (item) => {
-        await this.userRepository
-          .createQueryBuilder('user')
-          .update(User)
-          .set({
-            chatGroups: () => joinStringSet('user.chatGroups', chatRoom.id),
-          })
-          .where('id=:id', { id: item.id })
-          .execute();
-
-        this.chatGateway.newMessagesPreviewList({
-          userId: item.id,
-        } as any);
-      });
     } else if (to) {
       this.chatGateway.newMessagesPreviewList({
         userId: to,
