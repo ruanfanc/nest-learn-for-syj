@@ -492,13 +492,13 @@ export class TeamService implements OnModuleInit {
 
     const [data, total] = await this.teamRepository
       .createQueryBuilder('team')
-      .orderBy('case.createTime', 'DESC')
+      .orderBy('team.completedCaseCount', 'DESC')
       .skip(skip)
       .take(pageSize)
       .getManyAndCount();
 
     return {
-      teams: data,
+      data,
       total,
     };
   }
