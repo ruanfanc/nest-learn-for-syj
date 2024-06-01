@@ -487,7 +487,9 @@ export class TeamService implements OnModuleInit {
     let query = this.teamRepository.createQueryBuilder('team');
 
     if (groupId) {
-      query = query.where(`team.id = ${groupId}`);
+      query = query.where(`team.id = :groupId`, {
+        groupId: groupId,
+      });
     }
 
     const [data, total] = await this.teamRepository

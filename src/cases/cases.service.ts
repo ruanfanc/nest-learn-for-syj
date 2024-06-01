@@ -245,7 +245,7 @@ export class CasesService {
         {
           userId: session.userInfo.id,
           groupId: session.userInfo.groupId,
-          value: session.userInfo.groupId || '',
+          value: JSON.stringify(session.userInfo.groupId),
         },
       );
     } else {
@@ -486,15 +486,6 @@ export class CasesService {
       return this.noAuth();
     }
 
-    await this.teamRepository
-      .createQueryBuilder()
-      .update(Team)
-      .set({
-        completedCaseCount: team.completedCaseCount + 1,
-      })
-      .where(`id = ${team.id}`)
-      .execute();
-
     this.chatService.sendMessage({
       from: session.userInfo.id,
       to: caseById.userId,
@@ -523,6 +514,26 @@ export class CasesService {
       return this.noAuth();
     }
 
+    await this.caseRepository
+      .createQueryBuilder()
+      .update(Case)
+      .set({
+        status: CASE_STATUS.COMPELETE,
+      })
+      .where('id=:id', { id: caseId })
+      .execute();
+
+    await this.teamRepository
+      .createQueryBuilder()
+      .update(Team)
+      .set({
+        completedCaseCount: team.completedCaseCount + 1,
+      })
+      .where(`id = :teamId`, {
+        teamId: team.id,
+      })
+      .execute();
+
     team.admins.forEach((item) => {
       this.chatService.sendMessage({
         from: session.userInfo.id,
@@ -533,15 +544,6 @@ export class CasesService {
         },
       });
     });
-
-    await this.caseRepository
-      .createQueryBuilder()
-      .update(Case)
-      .set({
-        status: CASE_STATUS.COMPELETE,
-      })
-      .where('id=:id', { id: caseId })
-      .execute();
     return { success: true };
   }
 
