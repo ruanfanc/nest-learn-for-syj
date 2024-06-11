@@ -1,3 +1,4 @@
+import { databaseName } from 'src/common/constant';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 export const enum AuthLevel {
@@ -7,7 +8,7 @@ export const enum AuthLevel {
   MATES = 4,
 }
 
-@Entity('team', { schema: 'younglaw' })
+@Entity('team', { schema: databaseName })
 export class Team {
   @PrimaryColumn({ type: 'varchar', name: 'id' })
   id: string;

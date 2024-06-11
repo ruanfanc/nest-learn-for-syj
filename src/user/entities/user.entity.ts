@@ -1,11 +1,12 @@
+import { databaseName } from 'src/common/constant';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
-@Entity('user', { schema: 'younglaw' })
+@Entity('user', { schema: databaseName })
 export class User {
   @PrimaryColumn({ type: 'varchar', name: 'id' })
   id: string;
 
-  @Column('varchar', { name: 'nickName', length: 45 })
+  @Column('varchar', { name: 'nickName', length: 45, default: '微信用户' })
   nickName: string;
 
   @Column('text', { name: 'groupId', nullable: true })

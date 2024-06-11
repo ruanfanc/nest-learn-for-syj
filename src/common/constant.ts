@@ -5,3 +5,10 @@ const saveFilePaths = {
 };
 
 export const saveFilePath = saveFilePaths.online;
+
+const databaseNameMap = {
+  online: 'younglaw_online',
+  dev: 'younglaw',
+};
+
+export const databaseName = databaseNameMap.online;

@@ -10,7 +10,7 @@ import { SessionModule } from './session/session.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { FileModule } from './file/file.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { saveFilePath } from './common/constant';
+import { databaseName, saveFilePath } from './common/constant';
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { saveFilePath } from './common/constant';
       port: 3306,
       username: 'younglaw',
       password: '9156younglaw8270.',
-      database: 'younglaw',
+      database: databaseName,
       entities: [],
       synchronize: true,
       autoLoadEntities: true,

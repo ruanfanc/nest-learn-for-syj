@@ -1,3 +1,4 @@
+import { databaseName } from 'src/common/constant';
 import {
   Column,
   CreateDateColumn,
@@ -6,7 +7,7 @@ import {
 } from 'typeorm';
 import { CASE_STATUS, CASE_TYPE_MAP_VALUE } from '../types';
 
-@Entity('cases', { schema: 'younglaw' })
+@Entity('cases', { schema: databaseName })
 export class Case {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id: number;

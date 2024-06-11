@@ -1,3 +1,4 @@
+import { databaseName } from 'src/common/constant';
 import {
   Column,
   CreateDateColumn,
@@ -18,7 +19,7 @@ export enum ChatType {
   GROUP_AGREE_PEOPLE_ENTRUST_CASE = 10,
 }
 
-@Entity('message', { schema: 'younglaw' })
+@Entity('message', { schema: databaseName })
 export class Message {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id: number;
