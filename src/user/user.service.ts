@@ -110,19 +110,15 @@ export class UserService {
         session.avatarUrl = user.avatarUrl;
         session.userInfo = user;
         return { ...user };
-      } else {
-        session.openid = openid;
-        session.authenticated = true;
-
-        await this.userRepository.save({
-          id: openid,
-        });
-        const userInfo = {
-          id: openid,
-        };
-        session.userInfo = userInfo;
-        return userInfo;
       }
+
+      throw new HttpException(
+        {
+          errorno: 650,
+          errormsg: `不存在该用户`,
+        },
+        HttpStatus.OK,
+      );
     }
   }
   async init(initUse: InitUserDto, session: { userInfo: User }) {
