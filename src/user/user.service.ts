@@ -19,44 +19,44 @@ export class UserService {
   @InjectRepository(Team) private teamRepository: Repository<Team>;
 
   async login({ code, nickName, avatarUrl }: CreateUserDto, session) {
-    if (code === 'woshishdskashfasjk') {
-      const user = await this.userRepository.findOne({
-        where: { id: code },
-      });
+    // if (code === 'woshishdskashfasjk') {
+    //   const user = await this.userRepository.findOne({
+    //     where: { id: code },
+    //   });
 
-      session.openid = 'woshishdskashfasjk';
-      session.authenticated = true;
-      session.nickName = user.nickName;
-      session.avatarUrl = user.avatarUrl;
-      session.userInfo = user;
-      return user;
-    }
+    //   session.openid = 'woshishdskashfasjk';
+    //   session.authenticated = true;
+    //   session.nickName = user.nickName;
+    //   session.avatarUrl = user.avatarUrl;
+    //   session.userInfo = user;
+    //   return user;
+    // }
 
-    if (code === 'aaaaaaaaaaatestteacher') {
-      const user = await this.userRepository.findOne({
-        where: { id: code },
-      });
+    // if (code === 'aaaaaaaaaaatestteacher') {
+    //   const user = await this.userRepository.findOne({
+    //     where: { id: code },
+    //   });
 
-      session.openid = 'aaaaaaaaaaatestteacher';
-      session.authenticated = true;
-      session.nickName = user.nickName;
-      session.avatarUrl = user.avatarUrl;
-      session.userInfo = user;
-      return user;
-    }
+    //   session.openid = 'aaaaaaaaaaatestteacher';
+    //   session.authenticated = true;
+    //   session.nickName = user.nickName;
+    //   session.avatarUrl = user.avatarUrl;
+    //   session.userInfo = user;
+    //   return user;
+    // }
 
-    if (code === 'aaaaaaaaaaateststudent') {
-      const user = await this.userRepository.findOne({
-        where: { id: code },
-      });
+    // if (code === 'aaaaaaaaaaateststudent') {
+    //   const user = await this.userRepository.findOne({
+    //     where: { id: code },
+    //   });
 
-      session.openid = 'aaaaaaaaaaateststudent';
-      session.authenticated = true;
-      session.nickName = user.nickName;
-      session.avatarUrl = user.avatarUrl;
-      session.userInfo = user;
-      return user;
-    }
+    //   session.openid = 'aaaaaaaaaaateststudent';
+    //   session.authenticated = true;
+    //   session.nickName = user.nickName;
+    //   session.avatarUrl = user.avatarUrl;
+    //   session.userInfo = user;
+    //   return user;
+    // }
 
     const data = await axios.get(
       `https://api.weixin.qq.com/sns/jscode2session?appid=wx559e4273b8badf2a&secret=7b8954140d68ecf74f21f53b058138e6&grant_type=authorization_code&js_code=${code}`,
