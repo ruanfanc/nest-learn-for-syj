@@ -65,11 +65,17 @@ export class UserService {
     if (data.data.errcode) return data.data;
 
     const { openid } = data.data;
+    const user = await this.userRepository.findOne({
+      where: { id: openid },
+    });
 
     if (nickName && avatarUrl) {
       const count = await this.userRepository
         .createQueryBuilder('user')
-        .where('user.nickName = :nickName', { nickName })
+        .where('user.nickName = :nickName AND NOT user.id = :openid', {
+          nickName,
+          openid,
+        })
         .getCount();
 
       if (count !== 0) {
@@ -99,10 +105,6 @@ export class UserService {
       return newUser;
     } else {
       //  =============== just return user info ===============
-      const user = await this.userRepository.findOne({
-        where: { id: openid },
-      });
-
       if (user) {
         session.openid = openid;
         session.authenticated = true;
